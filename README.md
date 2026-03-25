@@ -13,7 +13,7 @@ ReplyMax is a one-screen cold outreach generator for founders, agencies, freelan
 - Next.js
 - TypeScript
 - Tailwind
-- OpenAI Responses API
+- OpenRouter Chat Completions API
 
 ## MVP constraints
 - no auth
@@ -40,7 +40,7 @@ Create env file
 cp .env.local.example .env.local
 ```
 Add:
-- OPENAI_API_KEY
+- OPENROUTER_API_KEY
 - NEXT_PUBLIC_STRIPE_CHECKOUT_URL
 - NEXT_PUBLIC_SITE_URL
 - ALLOWED_ORIGIN

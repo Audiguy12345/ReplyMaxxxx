@@ -6,7 +6,8 @@
     "dev": "node --no-experimental-webstorage ./node_modules/next/dist/bin/next dev",
     "build": "node --no-experimental-webstorage ./node_modules/next/dist/bin/next build",
     "start": "node --no-experimental-webstorage ./node_modules/next/dist/bin/next start",
-    "lint": "node --no-experimental-webstorage ./node_modules/next/dist/bin/next lint"
+    "lint": "node --no-experimental-webstorage ./node_modules/next/dist/bin/next lint",
+    "verify:fallback": "node ./scripts/verify-fallback.mjs"
   },
   "dependencies": {
     "next": "^15.5.14",

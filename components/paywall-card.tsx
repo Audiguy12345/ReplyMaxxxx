@@ -9,6 +9,8 @@ type PaywallCardProps = {
 
 export function PaywallCard({ used, freeLimit }: PaywallCardProps) {
   const locked = used >= freeLimit;
+  const showMissingCheckoutWarning =
+    !CHECKOUT_URL && process.env.NODE_ENV === "production";
 
   return (
     <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
@@ -61,9 +63,13 @@ export function PaywallCard({ used, freeLimit }: PaywallCardProps) {
           >
             Upgrade
           </a>
-        ) : (
+        ) : showMissingCheckoutWarning ? (
           <div className="border border-[#e4d6a8] bg-[#fff9ea] px-4 py-3 text-sm text-[#8a6a14]">
             Missing NEXT_PUBLIC_STRIPE_CHECKOUT_URL in environment.
+          </div>
+        ) : (
+          <div className="block w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-zinc-500">
+            Upgrade coming soon
           </div>
         )}
       </div>
