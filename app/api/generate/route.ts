@@ -206,6 +206,18 @@ Replace with direct language:
 
 ---
 
+Strategy rotation requirement:
+Across outputs, rotate the primary angle instead of repeating the same core issue.
+Choose ONE primary failure mode to emphasize:
+1. Hook failure (first line ignored)
+2. Misaligned offer (wrong problem being pitched)
+3. Timing mismatch (message lands at the wrong moment)
+4. Trust gap (feels like a pitch, not insight)
+5. Follow-up failure (conversation dies after reply)
+
+Each generation should emphasize ONE primary failure mode.
+Do not repeat the same core angle across outputs.
+
 Positioning rules:
 
 Must include ALL:
@@ -227,6 +239,15 @@ Each opener must:
 - be 1-2 sentences max
 - feel like it was triggered by something observed
 - create a reason to reply immediately
+
+Opener rules upgrade:
+- Remove all "I can show you", "I can help", "I can send"
+- Do NOT pitch in the opener
+- The opener must ONLY:
+  - expose a problem
+  - or create curiosity
+
+If it sounds like a sales message, it is invalid.
 
 Bad:
 "reaching out to connect"
@@ -480,3 +501,5 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
+
+
