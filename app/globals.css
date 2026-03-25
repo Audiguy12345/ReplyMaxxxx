@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --rm-ink: #0e0e0c;
+  --rm-ink-soft: #3a3a38;
+  --rm-muted: #8a8a86;
+  --rm-faint: #c4c4bf;
+  --rm-rule: #e4e4e0;
+  --rm-bg: #fafaf8;
+  --rm-surface: #f4f4f0;
+  --rm-white: #ffffff;
+  --rm-serif: Georgia, "Times New Roman", serif;
+  --rm-sans: "Segoe UI", Inter, Arial, sans-serif;
+  --rm-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--rm-white);
+  color: var(--rm-ink);
+  font-family: var(--rm-sans);
+}
+
+body {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.font-editorial {
+  font-family: var(--rm-serif);
+}
+
+.font-mono-ui {
+  font-family: var(--rm-mono);
+}

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ReplyMax v2 — Email</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #EEEEE9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 40px 20px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+    font-weight: 500;
+    margin-bottom: 16px;
+    align-self: flex-start;
+  }
+
+  .client {
+    width: 720px;
+    background: #F4F4F0;
+    border: 1px solid #D8D8D4;
+    overflow: hidden;
+  }
+
+  .client-chrome {
+    background: #EEEEE9;
+    border-bottom: 1px solid #D8D8D4;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cdots { display: flex; gap: 5px; }
+  .cdot { width: 9px; height: 9px; border-radius: 50%; background: #CCCCCA; }
+
+  .csubject {
+    flex: 1;
+    font-size: 12px;
+    color: #888884;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .cmeta {
+    background: #FFFFFF;
+    padding: 14px 24px;
+    border-bottom: 1px solid #E4E4E0;
+  }
+
+  .cmeta-row { display: flex; gap: 8px; font-size: 12px; margin-bottom: 4px; }
+  .cmeta-row:last-child { margin-bottom: 0; }
+  .mk { color: #AAAAAA; min-width: 40px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 1px; }
+  .mv { color: #3A3A38; }
+  .ms { color: #0E0E0C; font-weight: 500; }
+
+  .email-body {
+    background: #FFFFFF;
+    padding: 44px 52px;
+  }
+
+  .e-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #0E0E0C;
+    margin-bottom: 32px;
+  }
+
+  .e-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: #0E0E0C;
+  }
+
+  .e-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+  }
+
+  .e-hero {
+    margin-bottom: 32px;
+  }
+
+  .e-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 14px;
+  }
+
+  .e-h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 40px;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: #0E0E0C;
+    margin-bottom: 16px;
+  }
+
+  .e-h1 em { font-style: italic; color: #5A5A58; }
+
+  .e-sub {
+    font-size: 15px;
+    color: #5A5A58;
+    line-height: 1.65;
+    max-width: 480px;
+  }
+
+  .e-sub strong { color: #0E0E0C; font-weight: 500; }
+
+  .e-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #E4E4E0;
+  }
+
+  .e-msg {
+    background: #FAFAF8;
+    border: 1px solid #E4E4E0;
+    border-top: 2px solid #0E0E0C;
+    padding: 20px 24px;
+    margin-bottom: 10px;
+  }
+
+  .e-msg-l {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 10px;
+  }
+
+  .e-msg-t {
+    font-size: 14px;
+    color: #1A1A18;
+    line-height: 1.7;
+  }
+
+  .e-msg.alt { border-top-color: #CCCCCA; opacity: 0.55; }
+
+  .e-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border: 1px solid #E4E4E0;
+    margin: 28px 0;
+  }
+
+  .e-stat {
+    padding: 20px 24px;
+    text-align: center;
+    border-right: 1px solid #E4E4E0;
+  }
+
+  .e-stat:last-child { border-right: none; }
+
+  .e-stat-n {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    color: #0E0E0C;
+    margin-bottom: 4px;
+  }
+
+  .e-stat-l {
+    font-size: 12px;
+    color: #AAAAAA;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+
+  .e-cta {
+    text-align: center;
+    padding: 32px 0 8px;
+  }
+
+  .e-cta-pre {
+    font-size: 14px;
+    color: #8A8A86;
+    margin-bottom: 18px;
+    line-height: 1.6;
+  }
+
+  .e-btn {
+    display: inline-block;
+    background: #0E0E0C;
+    color: #FFFFFF;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    padding: 15px 48px;
+    text-decoration: none;
+    margin-bottom: 14px;
+  }
+
+  .e-cta-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #CCCCCA;
+    letter-spacing: 0.06em;
+  }
+
+  .e-footer {
+    border-top: 1px solid #E4E4E0;
+    padding-top: 20px;
+    margin-top: 28px;
+    text-align: center;
+  }
+
+  .e-footer-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 14px;
+    color: #CCCCCA;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .e-footer-t {
+    font-size: 11px;
+    color: #CCCCCA;
+    line-height: 1.6;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  .e-footer-t a { color: #CCCCCA; }
+</style>
+</head>
+<body>
+
+<p class="label">Email template — HTML</p>
+
+<div class="client">
+  <div class="client-chrome">
+    <div class="cdots">
+      <div class="cdot"></div><div class="cdot"></div><div class="cdot"></div>
+    </div>
+    <div class="csubject">Your landing page is leaking conversions — I can show you exactly where</div>
+  </div>
+
+  <div class="cmeta">
+    <div class="cmeta-row"><span class="mk">From</span><span class="mv">your-name@replymax.io</span></div>
+    <div class="cmeta-row"><span class="mk">To</span><span class="mv">founder@targetco.com</span></div>
+    <div class="cmeta-row"><span class="mk">Subj</span><span class="ms">Your landing page is leaking conversions — I can show you exactly where</span></div>
+  </div>
+
+  <div class="email-body">
+    <div class="e-header">
+      <div class="e-logo">ReplyMax</div>
+      <div class="e-tag">Outreach that earns replies</div>
+    </div>
+
+    <div class="e-hero">
+      <div class="e-eyebrow">Generated by ReplyMax</div>
+      <div class="e-h1">Stop sending emails<br>that get <em>ignored.</em></div>
+      <div class="e-sub">ReplyMax rewrites your cold outreach so <strong>people actually reply.</strong> Founders, agencies, freelancers — anyone doing real outbound.</div>
+    </div>
+
+    <div class="e-section-label">Example output — email opener</div>
+
+    <div class="e-msg">
+      <div class="e-msg-l">Email opener</div>
+      <div class="e-msg-t">
+        Hi [Name],<br><br>
+        Noticed you're running paid traffic to a landing page where the CTA is buried. The offer's strong — the structure is what's killing conversions.<br><br>
+        I rewrite pages like this into demo machines. Fixed this exact thing for 3 SaaS founders last month — two saw 30%+ lift in the first two weeks.<br><br>
+        Happy to do a quick free audit on your page — just takes 10 minutes. Worth it?<br><br>
+        [Your name]
+      </div>
+    </div>
+
+    <div class="e-msg alt">
+      <div class="e-msg-l">Follow-up</div>
+      <div class="e-msg-t">Hey [Name], sent this last week — wanted to make sure it landed. No pressure, just figured the traffic you're paying for deserves a page that converts it.</div>
+    </div>
+
+    <div class="e-stats">
+      <div class="e-stat">
+        <div class="e-stat-n">3 min</div>
+        <div class="e-stat-l">to generate</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-stat-n">4</div>
+        <div class="e-stat-l">platforms</div>
+      </div>
+      <div class="e-stat">
+        <div class="e-stat-n">Free</div>
+        <div class="e-stat-l">to start</div>
+      </div>
+    </div>
+
+    <div class="e-cta">
+      <div class="e-cta-pre">Put in your audience and offer.<br>Get messages you can send today.</div>
+      <div class="e-btn">Generate free outreach →</div><br>
+      <div class="e-cta-sub">No signup required for first 5 generations</div>
+    </div>
+
+    <div class="e-footer">
+      <div class="e-footer-logo">ReplyMax</div>
+      <div class="e-footer-t">
+        replymax.io · Built for people doing real outbound<br>
+        <a href="#">Unsubscribe</a> · <a href="#">Privacy</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

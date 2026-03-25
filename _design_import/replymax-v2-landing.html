@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReplyMax v2 — Minimal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0E0E0C;
+    --ink2: #3A3A38;
+    --ink3: #8A8A86;
+    --ink4: #C4C4BF;
+    --rule: #E4E4E0;
+    --bg: #FAFAF8;
+    --surface: #F4F4F0;
+    --white: #FFFFFF;
+  }
+
+  body {
+    background: var(--white);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 52px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  nav ul { display: flex; gap: 36px; list-style: none; }
+  nav ul li a {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink3);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: color 0.12s;
+  }
+  nav ul li a:hover { color: var(--ink); }
+
+  .nav-cta {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    padding: 9px 22px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.12s;
+  }
+  .nav-cta:hover { background: var(--ink2); }
+
+  /* HERO */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: calc(100vh - 69px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .hero-left {
+    padding: 80px 64px 80px 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid var(--rule);
+  }
+
+  .hero-top {}
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(48px, 5.5vw, 80px);
+    font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 32px;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--ink2);
+  }
+
+  .hero-body {
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--ink2);
+    max-width: 400px;
+    margin-bottom: 40px;
+  }
+
+  .cta-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .btn-primary {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    background: var(--ink);
+    color: var(--white);
+    border: none;
+    padding: 14px 32px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .btn-primary:hover { background: var(--ink2); }
+
+  .btn-ghost {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink3);
+    text-decoration: none;
+    border-bottom: 1px solid var(--ink4);
+    padding-bottom: 2px;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .btn-ghost:hover { color: var(--ink); border-color: var(--ink3); }
+
+  .hero-bottom {
+    padding-top: 40px;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+
+  .stat {
+    padding-right: 24px;
+    border-right: 1px solid var(--rule);
+    margin-right: 24px;
+  }
+  .stat:last-child { border-right: none; margin-right: 0; }
+
+  .stat-n {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-l {
+    font-size: 12px;
+    color: var(--ink3);
+    letter-spacing: 0.02em;
+  }
+
+  /* HERO RIGHT */
+  .hero-right {
+    background: var(--bg);
+    padding: 56px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .mock-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink4);
+    margin-bottom: 20px;
+  }
+
+  .input-block {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    padding: 18px 20px;
+    margin-bottom: 1px;
+  }
+
+  .input-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink4);
+    margin-bottom: 6px;
+  }
+
+  .input-val {
+    font-size: 13px;
+    color: var(--ink2);
+    line-height: 1.5;
+  }
+
+  .input-block:last-of-type { margin-bottom: 0; }
+
+  .mock-divider {
+    height: 1px;
+    background: var(--rule);
+    margin: 24px 0;
+  }
+
+  .output-block {
+    background: var(--white);
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--ink);
+    padding: 20px 22px;
+    margin-bottom: 10px;
+  }
+
+  .output-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 10px;
+  }
+
+  .output-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.65;
+  }
+
+  .output-block.muted {
+    border-top: 2px solid var(--rule);
+    opacity: 0.5;
+  }
+
+  /* FEATURES */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--rule);
+  }
+
+  .feat {
+    padding: 48px 52px;
+    border-right: 1px solid var(--rule);
+  }
+  .feat:last-child { border-right: none; }
+
+  .feat-n {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink4);
+    margin-bottom: 20px;
+  }
+
+  .feat-t {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+
+  .feat-t em { font-style: italic; }
+
+  .feat-b {
+    font-size: 14px;
+    color: var(--ink3);
+    line-height: 1.65;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ReplyMax</div>
+  <ul>
+    <li><a href="#">How it works</a></li>
+    <li><a href="#">Pricing</a></li>
+  </ul>
+  <button class="nav-cta">Try free</button>
+</nav>
+
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-top">
+      <p class="eyebrow">Cold outreach tool — MVP</p>
+      <h1>Outreach that<br>gets <em>replies,</em><br>not ignored.</h1>
+      <p class="hero-body">
+        Most AI outreach sounds like AI. ReplyMax doesn't.
+        Put in your audience and offer — get messages you can send in the next five minutes.
+      </p>
+      <div class="cta-row">
+        <button class="btn-primary">Generate free →</button>
+        <a href="#" class="btn-ghost">See an example</a>
+      </div>
+    </div>
+    <div class="hero-bottom">
+      <div class="stat">
+        <div class="stat-n">3 min</div>
+        <div class="stat-l">to first message</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">4</div>
+        <div class="stat-l">platforms supported</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">Free</div>
+        <div class="stat-l">to start, no card</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <p class="mock-label">Live preview</p>
+
+    <div class="input-block">
+      <div class="input-label">Audience</div>
+      <div class="input-val">B2B SaaS founders with traffic but low conversion</div>
+    </div>
+    <div class="input-block">
+      <div class="input-label">Offer</div>
+      <div class="input-val">I rewrite landing pages to increase demo conversions 20–40%</div>
+    </div>
+
+    <div class="mock-divider"></div>
+
+    <div class="output-block">
+      <div class="output-label">Opener — LinkedIn / Direct</div>
+      <div class="output-text">
+        Hey — noticed you're running paid traffic to a page that buries the CTA. I fix this exact problem. Fixed it for 3 SaaS founders last month — two saw 30%+ lift in two weeks. Worth 10 minutes?
+      </div>
+    </div>
+
+    <div class="output-block muted">
+      <div class="output-label">Follow-up</div>
+      <div class="output-text">
+        Sent this last week — no pressure. Just figured the traffic you're paying for deserves a page that converts it.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="feat">
+    <div class="feat-n">01</div>
+    <div class="feat-t">Sounds <em>human.</em></div>
+    <div class="feat-b">Not optimised. Not robotic. Messages that read like a real person who did their homework — because that's what gets replies.</div>
+  </div>
+  <div class="feat">
+    <div class="feat-n">02</div>
+    <div class="feat-t">Reply-rate <em>first.</em></div>
+    <div class="feat-b">We don't care if it sounds smart. We care if the person on the other end responds. Everything else is noise.</div>
+  </div>
+  <div class="feat">
+    <div class="feat-n">03</div>
+    <div class="feat-t">Send it <em>today.</em></div>
+    <div class="feat-b">One offer. One audience. Done in under three minutes. No playbook, no agency, no waiting.</div>
+  </div>
+</section>
+
+</body>
+</html>

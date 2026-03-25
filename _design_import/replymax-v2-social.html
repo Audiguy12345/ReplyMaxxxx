@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ReplyMax v2 — Social Cards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #E8E8E4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+  }
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  /* TWITTER 1200x675 */
+  .tw {
+    width: 1200px;
+    height: 675px;
+    background: #FAFAF8;
+    border: 1px solid #E0E0DC;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    transform: scale(0.5);
+    transform-origin: top center;
+    margin-bottom: -338px;
+    overflow: hidden;
+  }
+
+  .tw-left {
+    padding: 72px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid #E4E4E0;
+  }
+
+  .tw-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: #0E0E0C;
+    letter-spacing: -0.01em;
+  }
+
+  .tw-h {
+    font-family: 'DM Serif Display', serif;
+    font-size: 82px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: #0E0E0C;
+  }
+  .tw-h em { font-style: italic; color: #5A5A58; }
+
+  .tw-sub {
+    font-size: 20px;
+    color: #6A6A66;
+    line-height: 1.5;
+    max-width: 420px;
+  }
+  .tw-sub strong { color: #0E0E0C; font-weight: 500; }
+
+  .tw-right {
+    background: #FFFFFF;
+    padding: 72px 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .tw-mono {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 8px;
+  }
+
+  .tw-msg {
+    background: #FAFAF8;
+    border: 1px solid #E4E4E0;
+    border-top: 2px solid #0E0E0C;
+    padding: 22px 24px;
+  }
+
+  .tw-msg-l {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 10px;
+  }
+
+  .tw-msg-t {
+    font-size: 15px;
+    color: #1A1A18;
+    line-height: 1.6;
+  }
+
+  .tw-msg.dim { border-top: 2px solid #E0E0DC; opacity: 0.45; }
+
+  .tw-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #CCCCCC;
+    letter-spacing: 0.06em;
+  }
+
+  /* LINKEDIN 1200x627 */
+  .li {
+    width: 1200px;
+    height: 627px;
+    background: #FFFFFF;
+    border: 1px solid #E0E0DC;
+    display: grid;
+    grid-template-columns: 1fr 0.85fr;
+    transform: scale(0.5);
+    transform-origin: top center;
+    margin-bottom: -314px;
+    overflow: hidden;
+  }
+
+  .li-left {
+    padding: 64px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #0E0E0C;
+    color: #FAFAF8;
+  }
+
+  .li-logo-inv {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    color: #FAFAF8;
+  }
+
+  .li-h {
+    font-family: 'DM Serif Display', serif;
+    font-size: 72px;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: #FAFAF8;
+  }
+  .li-h em { font-style: italic; color: #888882; }
+
+  .li-sub {
+    font-size: 17px;
+    color: #666662;
+    line-height: 1.6;
+  }
+  .li-sub strong { color: #C8C8C4; font-weight: 500; }
+
+  .li-right {
+    padding: 64px 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+    background: #FAFAF8;
+    border-left: 1px solid #E4E4E0;
+  }
+
+  .li-r-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 6px;
+  }
+
+  .li-msg {
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+    border-top: 2px solid #0E0E0C;
+    padding: 20px 22px;
+  }
+  .li-msg-l { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #AAAAAA; margin-bottom: 8px; }
+  .li-msg-t { font-size: 13px; color: #1A1A18; line-height: 1.6; }
+  .li-msg.d1 { border-top-color: #CCCCCC; opacity: 0.55; }
+  .li-msg.d2 { border-top-color: #E4E4E0; opacity: 0.25; }
+</style>
+</head>
+<body>
+
+<p class="label">Twitter / X — 1200×675 (shown at 50%)</p>
+
+<div class="tw">
+  <div class="tw-left">
+    <div class="tw-logo">ReplyMax</div>
+    <div>
+      <div class="tw-h">Cold<br>outreach<br><em>that works.</em></div>
+    </div>
+    <div class="tw-sub">
+      Your audience. Your offer.<br>
+      Messages <strong>people reply to.</strong>
+    </div>
+    <div class="tw-url">replymax.io — try free</div>
+  </div>
+  <div class="tw-right">
+    <div class="tw-mono">Generated in seconds</div>
+    <div class="tw-msg">
+      <div class="tw-msg-l">Opener</div>
+      <div class="tw-msg-t">Saw you're running ads to a page that buries the CTA. I fix this. 3 founders last month, two saw 30%+ lift. Worth 10 minutes?</div>
+    </div>
+    <div class="tw-msg dim">
+      <div class="tw-msg-l">Follow-up</div>
+      <div class="tw-msg-t">No pressure — just figured the traffic you're paying for deserves a page that converts it.</div>
+    </div>
+  </div>
+</div>
+
+<p class="label" style="margin-top:24px;">LinkedIn — 1200×627 (shown at 50%)</p>
+
+<div class="li">
+  <div class="li-left">
+    <div class="li-logo-inv">ReplyMax</div>
+    <div class="li-h">Stop sending<br>DMs that get <em>ignored.</em></div>
+    <div class="li-sub">ReplyMax rewrites your cold outreach so <strong>people actually reply.</strong> One offer, one audience, three minutes.</div>
+  </div>
+  <div class="li-right">
+    <div class="li-r-label">What you get</div>
+    <div class="li-msg">
+      <div class="li-msg-l">Opener</div>
+      <div class="li-msg-t">Hey — noticed your ad traffic lands on a page that doesn't convert. Fixed this for 3 SaaS founders this month. 10 minutes?</div>
+    </div>
+    <div class="li-msg d1">
+      <div class="li-msg-l">Follow-up</div>
+      <div class="li-msg-t">Sent this last week. No hard sell — just wanted to make sure it landed.</div>
+    </div>
+    <div class="li-msg d2">
+      <div class="li-msg-l">Objection reply</div>
+      <div class="li-msg-t">Totally fair — most copy tweaks don't move the needle. This is different.</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

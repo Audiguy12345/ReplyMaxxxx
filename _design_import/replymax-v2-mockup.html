@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ReplyMax v2 — Product Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #EEEEE9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .browser {
+    width: 1100px;
+    background: #FFFFFF;
+    border: 1px solid #D8D8D4;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  }
+
+  .bar {
+    background: #F4F4F0;
+    border-bottom: 1px solid #E4E4E0;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #CCCCCA; }
+
+  .url {
+    flex: 1;
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #AAAAAA;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 320px;
+    margin: 0 auto;
+    letter-spacing: 0.04em;
+  }
+
+  .app-nav {
+    grid-column: 1 / -1;
+    padding: 16px 32px;
+    border-bottom: 1px solid #E4E4E0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FAFAF8;
+  }
+
+  .app-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    color: #0E0E0C;
+  }
+
+  .app-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #CCCCCA;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 660px;
+  }
+
+  /* FORM */
+  .form-side {
+    padding: 32px;
+    border-right: 1px solid #E4E4E0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: #FAFAF8;
+  }
+
+  .fl {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    margin-bottom: 6px;
+  }
+
+  .fta {
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+    padding: 14px 16px;
+    min-height: 72px;
+  }
+
+  .fta-t {
+    font-size: 13px;
+    color: #2A2A28;
+    line-height: 1.5;
+  }
+
+  .sel-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .fsel {
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .fsel-v { font-size: 13px; color: #1A1A18; }
+  .fsel-a { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid #AAAAAA; }
+
+  .submit {
+    background: #0E0E0C;
+    color: #FFFFFF;
+    border: none;
+    padding: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  .usage {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+  }
+
+  .usage-pips { display: flex; gap: 4px; }
+  .pip { width: 8px; height: 8px; border-radius: 50%; background: #0E0E0C; }
+  .pip.e { background: transparent; border: 1px solid #CCCCCA; }
+  .usage-t { font-size: 11px; color: #AAAAAA; }
+  .usage-t strong { color: #0E0E0C; }
+
+  /* OUTPUT */
+  .out-side {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #FFFFFF;
+  }
+
+  .out-h {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .out-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    color: #0E0E0C;
+  }
+
+  .copy-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #AAAAAA;
+    padding: 4px 10px;
+    border: 1px solid #E4E4E0;
+    cursor: pointer;
+  }
+
+  .angle {
+    background: #FAFAF8;
+    border: 1px solid #E4E4E0;
+    padding: 16px 18px;
+  }
+  .angle-l { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #AAAAAA; margin-bottom: 8px; }
+  .angle-t { font-size: 13px; color: #3A3A38; line-height: 1.55; font-style: italic; }
+
+  .ob {
+    background: #FFFFFF;
+    border: 1px solid #E4E4E0;
+    border-top: 2px solid #0E0E0C;
+    padding: 18px 20px;
+  }
+  .ob-l { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #AAAAAA; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .ob-t { font-size: 13px; color: #1A1A18; line-height: 1.65; }
+  .ob.d { border-top-color: #CCCCCA; opacity: 0.5; }
+  .ob.dd { border-top-color: #E4E4E0; opacity: 0.25; }
+
+  .divider { height: 1px; background: #E4E4E0; }
+</style>
+</head>
+<body>
+<div class="browser">
+  <div class="bar">
+    <div class="dots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="url">replymax.io</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;">
+    <div class="app-nav" style="grid-column:1/-1;">
+      <div class="app-logo">ReplyMax</div>
+      <div class="app-tag">MVP Beta</div>
+    </div>
+
+    <div class="form-side">
+      <div>
+        <div class="fl">Target audience</div>
+        <div class="fta"><div class="fta-t">B2B SaaS founders with traffic but low conversion</div></div>
+      </div>
+      <div>
+        <div class="fl">Your offer</div>
+        <div class="fta"><div class="fta-t">I rewrite landing pages to increase demo conversions by 20–40%</div></div>
+      </div>
+      <div>
+        <div class="fl">Current outreach (optional)</div>
+        <div class="fta" style="min-height:56px;"><div class="fta-t" style="color:#AAAAAA;font-style:italic;">"Hey, saw your site. I write code and can help..."</div></div>
+      </div>
+      <div class="sel-row">
+        <div>
+          <div class="fl">Platform</div>
+          <div class="fsel"><div class="fsel-v">LinkedIn</div><div class="fsel-a"></div></div>
+        </div>
+        <div>
+          <div class="fl">Tone</div>
+          <div class="fsel"><div class="fsel-v">Direct</div><div class="fsel-a"></div></div>
+        </div>
+      </div>
+      <div class="submit">Generate outreach →</div>
+      <div class="usage">
+        <div class="usage-pips">
+          <div class="pip"></div><div class="pip"></div>
+          <div class="pip e"></div><div class="pip e"></div><div class="pip e"></div>
+        </div>
+        <div class="usage-t"><strong>2 of 5</strong> free generations used</div>
+      </div>
+    </div>
+
+    <div class="out-side">
+      <div class="angle">
+        <div class="angle-l">Positioning angle</div>
+        <div class="angle-t">"You're paying for traffic but the landing page is the leak — fix the conversion, not the traffic."</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="out-h">
+        <div class="out-title">Openers</div>
+        <div class="copy-btn">Copy all</div>
+      </div>
+
+      <div class="ob">
+        <div class="ob-l">Opener 1 <div class="copy-btn" style="border:none;">Copy</div></div>
+        <div class="ob-t">Hey — noticed you're running paid traffic but the demo CTA is buried. I rewrite pages like this into conversion machines. Fixed this for 3 founders this month. Worth 10 minutes?</div>
+      </div>
+
+      <div class="ob d">
+        <div class="ob-l">Opener 2</div>
+        <div class="ob-t">Quick one — saw your landing page. Offer's strong, structure's killing it. I guarantee 20%+ lift. Happy to show you what I'd change.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="out-h">
+        <div class="out-title">Follow-ups</div>
+        <div class="copy-btn">Copy all</div>
+      </div>
+
+      <div class="ob dd">
+        <div class="ob-l">Follow-up 1</div>
+        <div class="ob-t">Sent this last week — no pressure. Just figured the traffic you're paying for deserves a page that converts it.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
