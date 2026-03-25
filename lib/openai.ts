@@ -1,3 +1,5 @@
+import OpenAI from "openai";
+
 type OpenRouterResponse = {
   choices?: Array<{
     message?: {
@@ -10,12 +12,46 @@ type OpenRouterResponse = {
 };
 
 const REQUEST_TIMEOUT_MS = 12000;
+const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
+const DEFAULT_OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
 
-export async function generateChatCompletion(input: string) {
-  const mockResponse = process.env.OPENROUTER_MOCK_RESPONSE;
+async function requestOpenAI(input: string) {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: REQUEST_TIMEOUT_MS,
+  });
 
-  if (mockResponse) {
-    return mockResponse;
+  const response = await client.responses.create({
+    model: process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL,
+    input: [
+      {
+        role: "system",
+        content: [
+          {
+            type: "input_text",
+            text: "Rewrite cold outreach so it feels human, specific, and easy to reply to. Keep it short.",
+          },
+        ],
+      },
+      {
+        role: "user",
+        content: [{ type: "input_text", text: input }],
+      },
+    ],
+  });
+
+  const output = response.output_text?.trim();
+
+  if (!output) {
+    throw new Error("OpenAI returned an empty response.");
+  }
+
+  return output;
+}
+
+async function requestOpenRouter(input: string) {
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("No AI provider is configured.");
   }
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -25,7 +61,7 @@ export async function generateChatCompletion(input: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "meta-llama/llama-3.1-8b-instruct:free",
+      model: process.env.OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL,
       messages: [
         {
           role: "system",
@@ -49,4 +85,18 @@ export async function generateChatCompletion(input: string) {
   }
 
   return output;
+}
+
+export async function generateChatCompletion(input: string) {
+  const mockResponse = process.env.OPENROUTER_MOCK_RESPONSE;
+
+  if (mockResponse) {
+    return mockResponse;
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    return requestOpenAI(input);
+  }
+
+  return requestOpenRouter(input);
 }

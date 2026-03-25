@@ -144,6 +144,7 @@ function startServer(env) {
 
 const fallbackRun = startServer({
   ...process.env,
+  OPENAI_API_KEY: "",
   OPENROUTER_API_KEY: "",
 });
 
@@ -166,7 +167,7 @@ try {
   assert(apiRes.ok, `API returned ${apiRes.status}`);
   assert(
     apiRes.headers.get("x-generator-source") === "fallback",
-    "Expected fallback source when OPENROUTER_API_KEY is missing."
+    "Expected fallback source when no provider key is configured."
   );
   assert(
     apiRes.headers.get("x-generator-reason") === "provider_request_failed",

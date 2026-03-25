@@ -9,8 +9,7 @@ type PaywallCardProps = {
 
 export function PaywallCard({ used, freeLimit }: PaywallCardProps) {
   const locked = used >= freeLimit;
-  const showMissingCheckoutWarning =
-    !CHECKOUT_URL && process.env.NODE_ENV === "production";
+  const hidePricing = !CHECKOUT_URL;
 
   return (
     <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
@@ -46,33 +45,27 @@ export function PaywallCard({ used, freeLimit }: PaywallCardProps) {
         If this gets you one client, it pays for itself instantly.
       </p>
 
-      <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-        <p className="text-sm font-medium text-white">$10/month</p>
-        <p className="mt-2 text-sm leading-7 text-zinc-400">
-          Better outputs, unlimited generations, same simple workflow.
-        </p>
-      </div>
+      {!hidePricing ? (
+        <>
+          <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="text-sm font-medium text-white">$10/month</p>
+            <p className="mt-2 text-sm leading-7 text-zinc-400">
+              Better outputs, unlimited generations, same simple workflow.
+            </p>
+          </div>
 
-      <div className="mt-5">
-        {CHECKOUT_URL ? (
-          <a
-            href={CHECKOUT_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="block w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-lg transition hover:opacity-90"
-          >
-            Upgrade
-          </a>
-        ) : showMissingCheckoutWarning ? (
-          <div className="border border-[#e4d6a8] bg-[#fff9ea] px-4 py-3 text-sm text-[#8a6a14]">
-            Missing NEXT_PUBLIC_STRIPE_CHECKOUT_URL in environment.
+          <div className="mt-5">
+            <a
+              href={CHECKOUT_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="block w-full rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-lg transition hover:opacity-90"
+            >
+              Upgrade
+            </a>
           </div>
-        ) : (
-          <div className="block w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-center text-sm font-semibold text-zinc-500">
-            Upgrade coming soon
-          </div>
-        )}
-      </div>
+        </>
+      ) : null}
     </div>
   );
 }

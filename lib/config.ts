@@ -5,4 +5,7 @@ export const CHECKOUT_URL =
 export const RATE_LIMIT_WINDOW_MS = Number(
   process.env.RATE_LIMIT_WINDOW_MS || 60_000
 );
-export const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 5);
+const DEFAULT_RATE_LIMIT_MAX = process.env.NODE_ENV === "development" ? 100 : 5;
+export const RATE_LIMIT_MAX = Number(
+  process.env.RATE_LIMIT_MAX || DEFAULT_RATE_LIMIT_MAX
+);
