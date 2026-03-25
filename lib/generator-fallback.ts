@@ -1,42 +1,28 @@
+import {
+  buildGeneratorSourceText,
+  detectFailureType,
+  extractEvidence,
+  hashString,
+  scoreHumanSignal,
+  selectStyleLane,
+  stripTrailingPunctuation,
+  type FailureDetection,
+  type FailureSubtype,
+  type FailureType,
+  type GenerationTelemetry,
+  type StyleLane,
+} from "@/lib/generator-analysis";
 import type { GeneratorInput, GeneratorOutput } from "@/lib/types";
 
-type FailureType = "messaging" | "conversion" | "attention";
+type FallbackContext = {
+  subtype: FailureSubtype;
+  styleLane: StyleLane;
+};
 
-function compactText(value: string, maxLength: number) {
-  return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
-}
-
-function stripTrailingPunctuation(value: string) {
-  return value.replace(/[\s.!?,:;]+$/g, "").trim();
-}
-
-function detectFailureType(
-  targetAudience: string,
-  offer: string,
-  extraContext: string
-): FailureType {
-  const input = `${targetAudience} ${offer} ${extraContext}`.toLowerCase();
-
-  if (
-    /convert|conversion|booking|booked|demo|sign.?up|close|closing|checkout|purchase/.test(
-      input
-    ) ||
-    (/traffic|visitors|clicks|leads/.test(input) &&
-      /low|weak|not|drop|no/.test(input))
-  ) {
-    return "conversion";
-  }
-
-  if (/reply|respond|response|email|outreach|cold|dm|message/.test(input)) {
-    return "messaging";
-  }
-
-  if (/views|engagement|impressions|reach|click.?through|ctr/.test(input)) {
-    return "attention";
-  }
-
-  return "messaging";
-}
+type FallbackResult = {
+  output: GeneratorOutput;
+  telemetry: GenerationTelemetry;
+};
 
 function platformWord(platform: GeneratorInput["platform"]) {
   switch (platform) {
@@ -55,168 +41,299 @@ function toneSet(tone: GeneratorInput["tone"]) {
   switch (tone) {
     case "professional":
       return {
-        soften: "Usually",
         close: "Worth looking at.",
         objectionLead: "Fair.",
       };
     case "casual":
       return {
-        soften: "Usually",
         close: "Probably worth fixing.",
         objectionLead: "Fair.",
       };
     default:
       return {
-        soften: "Usually",
         close: "Worth fixing.",
         objectionLead: "Fair.",
       };
   }
 }
 
-function cleanedContext(input: GeneratorInput) {
-  return {
-    extraContext: compactText(input.extraContext || "", 180),
-    currentMessage: compactText(input.currentMessage || "", 220),
-    offer: compactText(input.offer || "", 140),
-    audience: compactText(input.audience || "", 120),
-  };
+function buildFallbackDiagnosis(
+  failureType: FailureType,
+  subtype: FailureSubtype,
+  anchor: string
+) {
+  const detail = anchor || "the current setup";
+
+  if (failureType === "conversion") {
+    switch (subtype) {
+      case "too_pitchy":
+        return `${detail} is creating pressure before the decision feels safe, so interest leaks before anyone books.`;
+      case "low_credibility":
+        return `${detail} is asking for trust too early, so the value never gets a fair read.`;
+      default:
+        return `${detail} is getting attention, but the value is still too blurry at the decision step, so demos or signups stall.`;
+    }
+  }
+
+  if (failureType === "attention") {
+    switch (subtype) {
+      case "flat_tone":
+        return `${detail} is visible, but the packaging is too flat to earn a stop, so reach turns into passive scrolling.`;
+      default:
+        return `${detail} is showing up, but there is not enough tension in the first beat to make someone pause or click.`;
+    }
+  }
+
+  switch (subtype) {
+    case "generic_opener":
+      return `${detail} reads like it could go to anyone, so the opener gets filtered before the real point lands.`;
+    case "weak_relevance":
+      return `${detail} is saying something valid, but not in a way that proves it noticed this specific situation.`;
+    case "too_pitchy":
+      return `${detail} is leaning into the offer before earning attention, so the message feels like outreach on contact.`;
+    default:
+      return `${detail} is probably being skipped because it sounds careful instead of observant, so the reply window closes early.`;
+  }
 }
 
-function buildMessagingFallback(input: GeneratorInput): GeneratorOutput {
-  const { extraContext, currentMessage } = cleanedContext(input);
-  const tone = toneSet(input.tone);
+function buildFallbackRewrite(
+  failureType: FailureType,
+  subtype: FailureSubtype,
+  styleLane: StyleLane,
+  evidence: ReturnType<typeof extractEvidence>,
+  input: GeneratorInput
+) {
   const channel = platformWord(input.platform);
+  const { close } = toneSet(input.tone);
+  const [anchor, anchor2] = evidence.concreteDetails;
+  const pair = anchor && anchor2 ? `${anchor} and ${anchor2}` : anchor || anchor2 || channel;
 
-  const trigger =
-    stripTrailingPunctuation(extraContext) ||
-    (currentMessage
-      ? "The current message reads polished but easy to ignore"
-      : `The ${channel} is probably losing people in the first line`);
+  if (failureType === "conversion") {
+    if (subtype === "too_pitchy") {
+      return {
+        observant: `${pair} suggests the page is asking for too much too early. Pull the pressure out of the decision step first. ${close}`,
+        curious: `The useful question is whether the page is proving enough value before it asks for a demo. ${close}`,
+        direct: `The leak looks like premature pitch, not lack of interest. Soften the ask and sharpen the proof. ${close}`,
+        pattern_match: `Seen this pattern before: traffic is qualified, then the page rushes the sale and loses intent. ${close}`,
+        contrarian_light: `The answer probably is not more traffic. It is less pressure at the moment of choice. ${close}`,
+      }[styleLane];
+    }
+
+    if (subtype === "low_credibility") {
+      return {
+        observant: `${pair} reads like trust is lagging behind interest. Add proof before the ask gets bigger. ${close}`,
+        curious: `The better question is what would make the decision feel safer here before anyone books. ${close}`,
+        direct: `This is a trust gap. The page needs evidence before it asks for commitment. ${close}`,
+        pattern_match: `When bookings stay flat with decent traffic, the missing piece often is credibility, not volume. ${close}`,
+        contrarian_light: `A stronger CTA usually does less here than a stronger proof layer. ${close}`,
+      }[styleLane];
+    }
+
+    return {
+      observant: `${pair} points to friction after interest, not a top-of-funnel problem. Lead with the stuck decision point. ${close}`,
+      curious: `Open with the question behind the drop-off: are people interested and then hesitating, or never seeing enough value to act? ${close}`,
+      direct: `Call out the leak between attention and booking. More traffic is not the first fix when the decision step is weak. ${close}`,
+      pattern_match: `Seen this pattern before: the page gets qualified traffic, but the value and CTA do not survive the moment of choice. ${close}`,
+      contrarian_light: `The offer may be fine. The path to saying yes is what looks expensive here. ${close}`,
+    }[styleLane];
+  }
+
+  if (failureType === "attention") {
+    if (subtype === "flat_tone") {
+      return {
+        observant: `${pair} feels too polite on entry. The first beat needs more contrast to earn a stop. ${close}`,
+        curious: `The better question is whether the hook says anything sharp enough to interrupt the scroll. ${close}`,
+        direct: `The packaging is too flat. More posting will not compensate for a soft first impression. ${close}`,
+        pattern_match: `This pattern usually is not bad content. It is content introduced with too little tension. ${close}`,
+        contrarian_light: `Polished hooks often underperform when the real issue is lack of bite. ${close}`,
+      }[styleLane];
+    }
+
+    return {
+      observant: `${pair} suggests the work is being seen but not felt fast enough. The hook has to earn the stop sooner. ${close}`,
+      curious: `The useful question is whether people are seeing it and scrolling, or clicking and losing interest right after the first beat. ${close}`,
+      direct: `Posting more is not the answer if the packaging stays flat. The first impression has to create tension immediately. ${close}`,
+      pattern_match: `This usually is not a content-quality problem. It is a packaging problem that shows up before the substance gets a chance. ${close}`,
+      contrarian_light: `Better content often underperforms when it is introduced too politely. A stronger hook usually matters more than another post. ${close}`,
+    }[styleLane];
+  }
+
+  if (subtype === "generic_opener") {
+    return {
+      observant: `${pair} makes this feel like the first line could go to anyone. Lead with what is actually distinct here. ${close}`,
+      curious: `A better version asks from something real in the input, not from a stock outreach setup. ${close}`,
+      direct: `The opener is too generic. Replace the setup line with an actual observed miss. ${close}`,
+      pattern_match: `This usually improves when the opener sounds noticed instead of composed for broad use. ${close}`,
+      contrarian_light: `Extra polish will not save a generic first line. Specificity will. ${close}`,
+    }[styleLane];
+  }
+
+  if (subtype === "weak_relevance") {
+    return {
+      observant: `${pair} is a usable anchor, but the line still needs to prove it noticed this case and not a category. ${close}`,
+      curious: `The next version should ask from the real context, not from a generic messaging theory. ${close}`,
+      direct: `The problem is not effort. It is relevance that still feels one step too abstract. ${close}`,
+      pattern_match: `Seen this before: the point is valid, but it lands like a category read instead of a real observation. ${close}`,
+      contrarian_light: `Personalization is not the same as relevance. The line has to sound earned. ${close}`,
+    }[styleLane];
+  }
+
+  if (subtype === "too_pitchy") {
+    return {
+      observant: `${pair} makes the message feel like it is selling before it has earned attention. Lead with the miss, not the service. ${close}`,
+      curious: `A better version asks what is getting skipped first, then leaves the offer out of the opener. ${close}`,
+      direct: `Strip the pitch. Name the failure, ask one clean question, and stop there. ${close}`,
+      pattern_match: `This usually improves when the opener stops sounding like outreach and starts sounding like a real observation. ${close}`,
+      contrarian_light: `More offer language usually suppresses replies here, not improves them. ${close}`,
+    }[styleLane];
+  }
 
   return {
-    positioningAngle: `${trigger}. Usually that means the opener sounds like a pitch, so the offer never gets a real chance. The gap is between sending volume and getting actual replies.`,
+    observant: `${pair} makes this feel like the first line is doing too little work. Lead with that problem before the offer shows up. ${close}`,
+    curious: `A better version asks what is getting ignored first, then leaves room for a short reply instead of forcing a pitch. ${close}`,
+    direct: `Strip the sales setup. Call out the skipped opener or the dead reply chain in plain language, then stop. ${close}`,
+    pattern_match: `This usually improves when the opener names the real miss, not the service. The message should sound noticed, not prepared. ${close}`,
+    contrarian_light: `More personalization will not help if the first line still sounds like outreach. The fix is sharper framing, not extra polish. ${close}`,
+  }[styleLane];
+}
 
+function buildOpenersByLane(
+  styleLane: StyleLane,
+  anchor: string,
+  anchor2: string,
+  failureType: FailureType,
+  subtype: FailureSubtype
+) {
+  const normalizedAnchor = stripTrailingPunctuation(anchor);
+  const normalizedAnchor2 = stripTrailingPunctuation(anchor2);
+  const combo = normalizedAnchor && normalizedAnchor2
+    ? `${normalizedAnchor} and ${normalizedAnchor2}`
+    : normalizedAnchor || normalizedAnchor2 || "this";
+
+  const laneMap: Record<StyleLane, string[]> = {
+    observant: [
+      normalizedAnchor ? `${normalizedAnchor} stood out. Usually that is where ${failureType === "conversion" ? "decisions slow down" : failureType === "attention" ? "people stop scrolling past" : "replies start dying"}.` : "One thing stood out. The first impression is probably doing less work than it should.",
+      normalizedAnchor ? `Noticed ${normalizedAnchor}. That tends to make the whole message feel easier to skip.` : "Noticed a pattern here. It looks more like framing than effort.",
+      normalizedAnchor && normalizedAnchor2 ? `${combo} is an interesting combo. It usually points to a gap in how the problem gets framed first.` : "There is something here most outreach misses. The issue shows up before the offer does.",
+    ],
+    curious: [
+      normalizedAnchor ? `${normalizedAnchor} raised a question. Is that where ${failureType === "conversion" ? "interest starts stalling" : failureType === "attention" ? "people stop caring" : "the reply chain goes quiet"}?` : "A quick question came up. Where does the drop actually start?",
+      normalizedAnchor ? `Curious about the thinking behind ${normalizedAnchor}. It may be making the first read harder than it needs to be.` : "Curious what led to that choice. It may be costing attention early.",
+      "Something here felt worth asking about.",
+    ],
+    direct: [
+      normalizedAnchor ? `${normalizedAnchor} probably changes the way ${failureType === "conversion" ? "bookings" : failureType === "attention" ? "clicks" : "replies"} come in.` : "This probably affects response rate more than it looks.",
+      `Most ${failureType === "attention" ? "posts" : "messages"} lose people in the first line. This looks fixable.`,
+      `The issue here does not look like effort. It looks like ${subtype === "weak_relevance" ? "relevance" : subtype === "too_pitchy" ? "framing" : "timing"}.`,
+    ],
+    pattern_match: [
+      `This reads like a ${failureType === "conversion" ? "decision-step" : failureType === "attention" ? "hook" : "relevance"} problem more than a volume problem.`,
+      normalizedAnchor ? `${normalizedAnchor} usually points to the same messaging gap.` : "Seen this pattern before.",
+      `The message likely is not failing on intent. It is failing on feel.`,
+    ],
+    contrarian_light: [
+      `The problem probably is not the ${failureType === "conversion" ? "offer" : failureType === "attention" ? "content" : "channel"}.`,
+      `More ${failureType === "attention" ? "posting" : "outreach"} usually makes this worse, not better.`,
+      `Polished messaging can actually suppress replies here.`,
+    ],
+  };
+
+  return laneMap[styleLane];
+}
+
+function humanize(text: string, seed: string) {
+  const variations = [
+    (t: string) => t,
+    (t: string) => t.replace(/\.$/, ""),
+    (t: string) => `${t} — might be off`,
+    (t: string) => t.replace("Noticed", "Saw"),
+    (t: string) => t.replace("This", "That"),
+  ];
+
+  const variant = variations[hashString(seed) % variations.length];
+  return variant(text);
+}
+
+function buildFallbackOutput(
+  input: GeneratorInput,
+  detection: FailureDetection,
+  ctx: FallbackContext
+): FallbackResult {
+  const sourceText = buildGeneratorSourceText(input);
+  const evidence = extractEvidence(sourceText);
+  const anchor = evidence.concreteDetails[0] || "";
+  const anchor2 = evidence.concreteDetails[1] || "";
+  const openersByLane = buildOpenersByLane(
+    ctx.styleLane,
+    anchor,
+    anchor2,
+    detection.type,
+    ctx.subtype
+  );
+  const startIndex = hashString(sourceText + ctx.subtype) % openersByLane.length;
+  const orderedOpeners = Array.from({ length: 3 }, (_, index) => {
+    const openerRaw = openersByLane[(startIndex + index) % openersByLane.length];
+    return humanize(openerRaw, `${sourceText}${ctx.subtype}${index}`);
+  });
+
+  const output: GeneratorOutput = {
+    positioningAngle: buildFallbackDiagnosis(
+      detection.type,
+      ctx.subtype,
+      anchor || input.extraContext || input.currentMessage || input.offer
+    ),
     ctaRecommendation:
       "Lead with the visible problem first, then ask one direct question that is easy to answer.",
-
-    openers: [
-      `${trigger}. That is usually where replies die.`,
-      `Are people ignoring the first line, or replying and then dropping off?`,
-      `More sends will not fix a weak opener. The message is getting skipped before the offer lands.`,
-    ],
-
+    openers: orderedOpeners,
     followUps: [
-      `If reply rates are low, the issue is usually the first line rather than volume. ${tone.close}`,
-      `If the conversation keeps dying, the message is probably framing the wrong problem.`,
+      buildFallbackRewrite(detection.type, ctx.subtype, ctx.styleLane, evidence, input),
+      detection.type === "conversion"
+        ? "If the page is already getting attention, the next gain usually comes from clarifying the choice, not buying more traffic."
+        : detection.type === "attention"
+          ? "If views are present but clicks stay flat, the first packaging beat is usually too soft to do its job."
+          : "If the conversation keeps dying, the first line is usually sounding prepared instead of noticed.",
     ],
-
     objections: [
       {
         objection: "This is too expensive.",
-        reply: `${tone.objectionLead} If better messaging does not turn into more replies or more closed deals, it is not worth paying for.`,
+        reply: `${toneSet(input.tone).objectionLead} If clearer framing does not create better replies or cleaner decisions, it is not worth paying for.`,
       },
       {
         objection: "Bad timing right now.",
         reply:
-          "That usually means the next step needs to be smaller, not that the problem disappears.",
+          detection.type === "conversion"
+            ? "Fair. If the leak is already in the funnel, waiting usually just burns more demand through the same weak step."
+            : detection.type === "attention"
+              ? "Fair. Timing matters less when the hook still is not earning a stop on contact."
+              : "Fair. Bad timing usually means the ask should get smaller, not that the messaging issue disappears.",
       },
       {
         objection: "We already use something for this.",
         reply:
-          "Using something is not the same as getting the result. The gap usually shows up in reply quality and conversion.",
+          detection.type === "conversion"
+            ? "Using something is not the same as removing the decision friction. The metric is what matters."
+            : detection.type === "attention"
+              ? "Posting consistently is not the same as packaging the first beat well enough to earn interest."
+              : "Using a tool is not the same as getting replies. The gap usually shows up in how the opener lands.",
       },
     ],
   };
-}
 
-function buildConversionFallback(input: GeneratorInput): GeneratorOutput {
-  const { extraContext } = cleanedContext(input);
-  const tone = toneSet(input.tone);
-
-  const trigger =
-    stripTrailingPunctuation(extraContext) ||
-    "Traffic is showing up, but the conversion point is where it is breaking";
+  const humanSignal = scoreHumanSignal(
+    [output.positioningAngle, ...output.openers, ...output.followUps].join("\n"),
+    sourceText
+  );
 
   return {
-    positioningAngle: `${trigger}. Usually that means the page, CTA, or decision step is creating friction. The gap is between getting attention and getting someone to book, buy, or sign up.`,
-
-    ctaRecommendation:
-      "Call out the specific friction point first, then ask one question that makes them look at the conversion step differently.",
-
-    openers: [
-      `${trigger}. That usually means the decision point is weaker than the traffic.`,
-      `Are people landing and leaving, or getting interested and then not booking?`,
-      `More traffic will not fix a weak conversion step. Something in the page is stopping the decision.`,
-    ],
-
-    followUps: [
-      `If clicks are there but bookings are not, the issue is usually friction, not traffic. ${tone.close}`,
-      "When demos or signups stay flat, the offer is often reaching the page but not surviving the decision moment.",
-    ],
-
-    objections: [
-      {
-        objection: "We need more traffic first.",
-        reply:
-          "More traffic usually amplifies the leak. If the page is not converting now, extra volume mostly wastes more effort.",
-      },
-      {
-        objection: "The page is already fine.",
-        reply:
-          "A page can look fine and still lose decisions. The metric matters more than the design opinion.",
-      },
-      {
-        objection: "We already run tests.",
-        reply:
-          "Most tests change surface details. The bigger issue is usually where the decision gets stuck.",
-      },
-    ],
-  };
-}
-
-function buildAttentionFallback(input: GeneratorInput): GeneratorOutput {
-  const { extraContext } = cleanedContext(input);
-  const tone = toneSet(input.tone);
-
-  const trigger =
-    stripTrailingPunctuation(extraContext) ||
-    "The content is getting seen, but not pulling enough response";
-
-  return {
-    positioningAngle: `${trigger}. Usually that means the hook or packaging is too flat to make people stop. The gap is between being visible and getting clicks, engagement, or real interest.`,
-
-    ctaRecommendation:
-      "Lead with the packaging problem first, then ask one direct question about what people are actually reacting to.",
-
-    openers: [
-      `${trigger}. That usually points to a weak hook, not a lack of effort.`,
-      `Are people seeing it and scrolling past, or clicking and then losing interest?`,
-      `More posting will not fix weak packaging. The hook is not giving people a reason to stop.`,
-    ],
-
-    followUps: [
-      `If views are there but clicks are flat, the packaging is probably doing less work than it should. ${tone.close}`,
-      "When engagement stays low, the problem is often not the content itself but how it gets presented first.",
-    ],
-
-    objections: [
-      {
-        objection: "The content is good already.",
-        reply:
-          "Good content still gets ignored when the hook is weak. Quality alone does not force attention.",
-      },
-      {
-        objection: "Algorithms are the real problem.",
-        reply:
-          "Algorithm issues are real, but weak hooks usually make the problem worse before the algorithm even matters.",
-      },
-      {
-        objection: "We already post consistently.",
-        reply:
-          "Consistency helps distribution. It does not fix content that people keep skipping.",
-      },
-    ],
+    output,
+    telemetry: {
+      source: "fallback",
+      failureType: detection.type,
+      failureSubtype: ctx.subtype,
+      styleLane: ctx.styleLane,
+      humanSignalScore: humanSignal.score,
+      hardFailures: [],
+    },
   };
 }
 
@@ -225,19 +342,19 @@ export function generateFallbackOutput(
     GeneratorInput,
     "audience" | "offer" | "platform" | "tone" | "extraContext" | "currentMessage"
   >,
-  failureType?: FailureType
-): GeneratorOutput {
-  const resolvedFailureType =
-    failureType ||
-    detectFailureType(input.audience, input.offer, input.extraContext || "");
+  detection?: FailureDetection
+): FallbackResult {
+  const generatorInput = input as GeneratorInput;
+  const resolvedDetection =
+    detection || detectFailureType(buildGeneratorSourceText(generatorInput));
+  const styleLane = selectStyleLane(
+    buildGeneratorSourceText(generatorInput),
+    resolvedDetection.type
+  );
 
-  if (resolvedFailureType === "conversion") {
-    return buildConversionFallback(input as GeneratorInput);
-  }
-
-  if (resolvedFailureType === "attention") {
-    return buildAttentionFallback(input as GeneratorInput);
-  }
-
-  return buildMessagingFallback(input as GeneratorInput);
+  return buildFallbackOutput(generatorInput, resolvedDetection, {
+    subtype: resolvedDetection.subtype,
+    styleLane,
+  });
 }
+
