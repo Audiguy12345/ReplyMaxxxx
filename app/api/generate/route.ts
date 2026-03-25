@@ -186,17 +186,17 @@ Each opener MUST use a different structure:
 If structures repeat, the output is invalid.
 
 4. REMOVE AI tone
-- No polished, balanced, “perfect” phrasing
+- No polished, balanced, "perfect" phrasing
 - Slightly uneven, human tone is preferred
 - Avoid symmetry and over-clean structure
 
 5. BAN soft phrasing
 Do not use:
-- “just”
-- “might”
-- “could help”
-- “create traction”
-- “improve engagement”
+- "just"
+- "might"
+- "could help"
+- "create traction"
+- "improve engagement"
 
 Replace with direct language:
 - ignored
@@ -214,25 +214,25 @@ Must include ALL:
 - what is being missed (opportunity gap)
 
 Bad:
-“help improve results”
+"help improve results"
 
 Good:
-“your messages are getting ignored because the hook sounds like every other pitch, so the offer never gets a real chance”
+"your messages are getting ignored because the hook sounds like every other pitch, so the offer never gets a real chance"
 
 ---
 
 Openers rules:
 
 Each opener must:
-- be 1–2 sentences max
+- be 1-2 sentences max
 - feel like it was triggered by something observed
 - create a reason to reply immediately
 
 Bad:
-“reaching out to connect”
+"reaching out to connect"
 
 Good:
-“Looks like you’re sending volume but not getting replies—are people ignoring the first line or dropping off after they respond?”
+"Looks like you're sending volume but not getting replies-are people ignoring the first line or dropping off after they respond?"
 
 ---
 
@@ -480,6 +480,3 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
-
-
-
