@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/config";
 import {
   buildGeneratorSourceText,
@@ -120,6 +120,9 @@ function buildPrompt(input: GeneratorInput) {
   const evidence = extractEvidence(sourceText);
   const evidenceList = evidence.concreteDetails.join(", ") || "none";
   const patternList = evidence.patterns.join(", ") || "none";
+  const dominantSignalText = evidence.dominantSignal
+    ? `${evidence.dominantSignal.type}: ${evidence.dominantSignal.values.join(" vs ")}`
+    : "none";
   const anchoringInstruction = evidence.weakInput
     ? "Evidence is weak. Stay lean and restrained instead of inventing specificity."
     : "Every opener must anchor to 1-2 real details from the input."
@@ -168,6 +171,9 @@ Concrete evidence available:
 Detected patterns:
 - ${patternList}
 
+Dominant signal:
+- ${dominantSignalText}
+
 Return one JSON object with exactly this shape and no markdown fences:
 {
   "positioningAngle": "string",
@@ -189,6 +195,7 @@ Non-negotiable rules:
 - opener must sound naturally observant, not theatrically clever
 - avoid fake specificity
 - ${anchoringInstruction}
+- if a dominant numeric signal exists, you must use it directly in the output
 - use plain spoken language, not marketing language
 - avoid sounding polished for the sake of sounding polished
 If a current message is provided:
@@ -560,6 +567,8 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
+
+
 
 
 

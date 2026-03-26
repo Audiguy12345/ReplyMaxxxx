@@ -1,4 +1,4 @@
-import type { GeneratorInput, GeneratorOutput } from "@/lib/types";
+﻿import type { GeneratorInput, GeneratorOutput } from "@/lib/types";
 
 export type FailureType = "messaging" | "conversion" | "attention";
 
@@ -26,8 +26,15 @@ export type StyleLane =
   | "pattern_match"
   | "contrarian_light";
 
+export type DominantSignal = {
+  type: "numeric_contrast";
+  values: string[];
+};
+
 export type ExtractedEvidence = {
   concreteDetails: string[];
+  numericAnchors: string[];
+  dominantSignal: DominantSignal | null;
   patterns: string[];
   weakInput: boolean;
 };
@@ -92,6 +99,13 @@ const VAGUE_PHRASES = [
   "could be improved",
   "seems like",
   "might be",
+];
+
+const WEAK_OPENER_PHRASES = [
+  "something here",
+  "worth asking",
+  "felt worth",
+  "something feels",
 ];
 
 const EVIDENCE_PRIORITY: Record<string, number> = {
@@ -274,6 +288,46 @@ export function selectStyleLane(
   return lanes[hashString(seed) % lanes.length];
 }
 
+function extractNumericAnchors(input: string): string[] {
+  const matches =
+    input.match(/\b\d[\d,]*(?:\.\d+)?(?:k|m|%|\+)?\b/gi) || [];
+
+  return [...new Set(matches.map((match) => normalizeWhitespace(match)))];
+}
+
+function textIncludesNumericAnchor(text: string, anchor: string): boolean {
+  const normalizedText = text.toLowerCase();
+  const normalizedAnchor = anchor.toLowerCase();
+  const compactAnchor = normalizedAnchor.replace(/,/g, "");
+  const digitsOnly = compactAnchor.replace(/[^\dkm%+]/g, "");
+  const variants = new Set([normalizedAnchor, compactAnchor, digitsOnly]);
+
+  if (/^\d{4,}$/.test(digitsOnly) && Number(digitsOnly) % 1000 === 0) {
+    variants.add(`${Number(digitsOnly) / 1000}k`);
+  }
+
+  for (const variant of variants) {
+    if (variant && normalizedText.includes(variant)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function extractDominantSignal(input: string): DominantSignal | null {
+  const numbers = extractNumericAnchors(input).filter((value) => /\d{2,}|\d,\d/.test(value));
+
+  if (numbers.length >= 2) {
+    return {
+      type: "numeric_contrast",
+      values: numbers,
+    };
+  }
+
+  return null;
+}
+
 function extractPatterns(input: string): string[] {
   const patterns: string[] = [];
   const lower = input.toLowerCase();
@@ -294,6 +348,8 @@ function extractPatterns(input: string): string[] {
 }
 
 export function extractEvidence(input: string): ExtractedEvidence {
+  const numericAnchors = extractNumericAnchors(input);
+  const dominantSignal = extractDominantSignal(input);
   const matches =
     input.match(
       /\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)?|\d+%|\d+\+?|\$\d+[kKmM]?|linkedin|reddit|twitter|cold email|saas|agency|agencies|founder|founders|recruiter|recruiters|ecommerce|shopify|traffic|reply|replies|response|responses|demo|demos|conversion|conversions|cta|hook|hooks|landing page|landing|funnel|messaging|outreach|copy)\b/g
@@ -305,12 +361,14 @@ export function extractEvidence(input: string): ExtractedEvidence {
     const rightPriority = EVIDENCE_PRIORITY[right.toLowerCase()] || 0;
     return rightPriority - leftPriority;
   });
-  const concreteDetails = ranked.slice(0, 4);
+  const concreteDetails = [...numericAnchors, ...ranked.filter((item) => !numericAnchors.includes(item))].slice(0, 4);
 
   const patterns = extractPatterns(input);
 
   return {
     concreteDetails,
+    numericAnchors,
+    dominantSignal,
     patterns,
     weakInput: concreteDetails.length < 1 && patterns.length < 1,
   };
@@ -321,7 +379,12 @@ export function hasConcreteAnchor(text: string, input: string): boolean {
     .toLowerCase()
     .split(/\W+/)
     .filter((token) => token.length > 4);
+  const numericAnchors = extractNumericAnchors(input);
   const textLower = text.toLowerCase();
+
+  if (numericAnchors.some((anchor) => textIncludesNumericAnchor(text, anchor))) {
+    return true;
+  }
 
   return inputTokens.some((token) => textLower.includes(token));
 }
@@ -335,6 +398,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   const lower = text.toLowerCase();
   const evidence = extractEvidence(input);
   let scorePenalty = 0;
+  let scoreBonus = 0;
 
   const rubric: HumanSignalRubric = {
     specificity: 100,
@@ -356,6 +420,13 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     if (lower.includes(phrase)) {
       scorePenalty += 6;
       reasons.push(`vague phrasing: ${phrase}`);
+    }
+  }
+
+  for (const phrase of WEAK_OPENER_PHRASES) {
+    if (lower.includes(phrase)) {
+      scorePenalty += 15;
+      reasons.push("weak vague opener");
     }
   }
 
@@ -419,6 +490,37 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     reasons.push("low tension / no clear problem signal");
   }
 
+  if (!/(views|clicks|likes)/i.test(text)) {
+    scorePenalty += 10;
+    reasons.push("not grounded in observable metric");
+  }
+
+  if (!/(but|however|instead|yet)/i.test(text)) {
+    scorePenalty += 8;
+    reasons.push("missing contrast/tension");
+  }
+
+  if (evidence.numericAnchors.length > 0) {
+    const numericAnchorHits = evidence.numericAnchors.filter((anchor) =>
+      textIncludesNumericAnchor(text, anchor)
+    );
+
+    if (numericAnchorHits.length === 0) {
+      scorePenalty += 15;
+      reasons.push("missed strong numeric anchor");
+    }
+
+    if (numericAnchorHits.length >= 2) {
+      scoreBonus += 10;
+      reasons.push("strong numeric contrast");
+    }
+  }
+
+  if (evidence.dominantSignal?.type === "numeric_contrast" && !/\d/.test(text)) {
+    scorePenalty += 25;
+    reasons.push("missed dominant numeric signal");
+  }
+
   if (!hasConcreteAnchor(text, input)) {
     scorePenalty += 20;
     reasons.push("no concrete anchor to input");
@@ -428,6 +530,11 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     rubric.specificity -= 22;
     rubric.openerRelevance -= 12;
     reasons.push("missing concrete anchor");
+  }
+
+  if (text.length > 180) {
+    scorePenalty += 6;
+    reasons.push("too wordy for outreach");
   }
 
   const sentenceCount = text.split(/[.!?]+/).filter((part) => part.trim().length > 0).length;
@@ -441,7 +548,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   }
 
   return {
-    score: Math.max(0, average(Object.values(rubric)) - scorePenalty),
+    score: Math.max(0, average(Object.values(rubric)) - scorePenalty + scoreBonus),
     reasons,
     rubric,
   };
@@ -640,6 +747,11 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
+
+
+
 
 
 

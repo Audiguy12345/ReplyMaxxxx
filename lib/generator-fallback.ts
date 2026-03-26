@@ -1,4 +1,4 @@
-import {
+﻿import {
   buildGeneratorSourceText,
   detectFailureType,
   extractEvidence,
@@ -217,9 +217,9 @@ function buildOpenersByLane(
       normalizedAnchor && normalizedAnchor2 ? `${combo} is an interesting combo. It usually points to a gap in how the problem gets framed first.` : "There is something here most outreach misses. The issue shows up before the offer does.",
     ],
     curious: [
-      normalizedAnchor ? `${normalizedAnchor} raised a question. Is that where ${failureType === "conversion" ? "interest starts stalling" : failureType === "attention" ? "people stop caring" : "the reply chain goes quiet"}?` : "A quick question came up. Where does the drop actually start?",
-      normalizedAnchor ? `Curious about the thinking behind ${normalizedAnchor}. It may be making the first read harder than it needs to be.` : "Curious what led to that choice. It may be costing attention early.",
-      "Something here felt worth asking about.",
+      normalizedAnchor ? `Curious what's happening after ${normalizedAnchor}. Is that where ${failureType === "conversion" ? "interest stalls" : failureType === "attention" ? "people drop" : "the reply chain goes quiet"}?` : "What's happening right after the first look?",
+      normalizedAnchor ? `Feels like people see ${normalizedAnchor} but don't move.` : "Feels like people see it but don't move.",
+      failureType === "attention" ? "What's happening after the view?" : "What's happening right after they see it?",
     ],
     direct: [
       normalizedAnchor ? `${normalizedAnchor} probably changes the way ${failureType === "conversion" ? "bookings" : failureType === "attention" ? "clicks" : "replies"} come in.` : "This probably affects response rate more than it looks.",
@@ -246,7 +246,7 @@ function humanizeLine(text: string, seed: string) {
     (value: string) => value,
     (value: string) => value.replace(/\.$/, ""),
     (value: string) => value.replace(/\.$/, "..."),
-    (value: string) => `${value} � might be off`,
+    (value: string) => `${value} — might be off`,
     (value: string) => value.replace(/^Noticed\b/, "Saw"),
     (value: string) => value.replace(/^This reads like\b/, "Feels more like"),
     (value: string) => value.replace(/^This/, "This might be off but"),
@@ -263,8 +263,11 @@ function buildFallbackOutput(
 ): FallbackResult {
   const sourceText = buildGeneratorSourceText(input);
   const evidence = extractEvidence(sourceText);
-  const anchor = evidence.concreteDetails[0] || "";
-  const anchor2 = evidence.concreteDetails[1] || "";
+  const dominantPair = evidence.dominantSignal?.type === "numeric_contrast"
+    ? evidence.dominantSignal.values.slice(0, 2).join(" vs ")
+    : "";
+  const anchor = dominantPair || evidence.concreteDetails[0] || "";
+  const anchor2 = dominantPair ? "views vs likes" : evidence.concreteDetails[1] || "";
   const openersByLane = buildOpenersByLane(
     ctx.styleLane,
     anchor,
@@ -359,6 +362,9 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
+
+
 
 
 
