@@ -28,7 +28,8 @@ export type StyleLane =
 
 export type DominantSignal = {
   type: "numeric_contrast";
-  values: string[];
+  high: number;
+  low: number;
 };
 
 export type ExtractedEvidence = {
@@ -315,13 +316,32 @@ function textIncludesNumericAnchor(text: string, anchor: string): boolean {
   return false;
 }
 
-function extractDominantSignal(input: string): DominantSignal | null {
-  const numbers = extractNumericAnchors(input).filter((value) => /\d{2,}|\d,\d/.test(value));
+function extractNumericContrast(input: string) {
+  const matches = extractNumericAnchors(input)
+    .map((value) => ({
+      raw: value,
+      numeric: Number(value.toLowerCase().replace(/,/g, "").replace(/k$/, "000").replace(/m$/, "000000")),
+    }))
+    .filter((item) => Number.isFinite(item.numeric) && item.numeric >= 10);
 
-  if (numbers.length >= 2) {
+  if (matches.length >= 2) {
+    return {
+      high: Math.max(...matches.map((item) => item.numeric)),
+      low: Math.min(...matches.map((item) => item.numeric)),
+    };
+  }
+
+  return null;
+}
+
+function extractDominantSignal(input: string): DominantSignal | null {
+  const numericContrast = extractNumericContrast(input);
+
+  if (numericContrast) {
     return {
       type: "numeric_contrast",
-      values: numbers,
+      high: numericContrast.high,
+      low: numericContrast.low,
     };
   }
 
@@ -423,6 +443,11 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     }
   }
 
+  if (lower.includes("worth looking at")) {
+    scorePenalty += 15;
+    reasons.push("ai filler phrase");
+  }
+
   for (const phrase of WEAK_OPENER_PHRASES) {
     if (lower.includes(phrase)) {
       scorePenalty += 15;
@@ -516,9 +541,19 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     }
   }
 
-  if (evidence.dominantSignal?.type === "numeric_contrast" && !/\d/.test(text)) {
-    scorePenalty += 25;
-    reasons.push("missed dominant numeric signal");
+  if (evidence.dominantSignal?.type === "numeric_contrast") {
+    const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
+    const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
+
+    if (!hasHigh || !hasLow) {
+      scorePenalty += 20;
+      reasons.push("lost numeric contrast");
+    }
+
+    if (!/\d/.test(text)) {
+      scorePenalty += 25;
+      reasons.push("missed dominant numeric signal");
+    }
   }
 
   if (!hasConcreteAnchor(text, input)) {
@@ -747,6 +782,8 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
 
 
 

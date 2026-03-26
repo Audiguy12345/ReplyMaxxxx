@@ -41,12 +41,12 @@ function toneSet(tone: GeneratorInput["tone"]) {
   switch (tone) {
     case "professional":
       return {
-        close: "Worth looking at.",
+        close: "Needs a closer look.",
         objectionLead: "Fair.",
       };
     case "casual":
       return {
-        close: "Probably worth fixing.",
+        close: "Probably needs fixing.",
         objectionLead: "Fair.",
       };
     default:
@@ -80,7 +80,7 @@ function buildFallbackDiagnosis(
       case "flat_tone":
         return `${detail} is visible, but the packaging is too flat to earn a stop, so reach turns into passive scrolling.`;
       default:
-        return `${detail} is showing up, but there is not enough tension in the first beat to make someone pause or click.`;
+        return `${detail} is showing up, but only a small slice is signaling back, so the drop is happening before intent turns into action.`;
     }
   }
 
@@ -218,8 +218,8 @@ function buildOpenersByLane(
     ],
     curious: [
       normalizedAnchor ? `Curious what's happening after ${normalizedAnchor}. Is that where ${failureType === "conversion" ? "interest stalls" : failureType === "attention" ? "people drop" : "the reply chain goes quiet"}?` : "What's happening right after the first look?",
-      normalizedAnchor ? `Feels like people see ${normalizedAnchor} but don't move.` : "Feels like people see it but don't move.",
-      failureType === "attention" ? "What's happening after the view?" : "What's happening right after they see it?",
+      normalizedAnchor ? `${normalizedAnchor} usually means attention is landing but intent is not.` : "People see it, but they are not moving.",
+      normalizedAnchor ? `${normalizedAnchor} — what's happening right after that?` : "What's happening right after they see it?",
     ],
     direct: [
       normalizedAnchor ? `${normalizedAnchor} probably changes the way ${failureType === "conversion" ? "bookings" : failureType === "attention" ? "clicks" : "replies"} come in.` : "This probably affects response rate more than it looks.",
@@ -264,7 +264,7 @@ function buildFallbackOutput(
   const sourceText = buildGeneratorSourceText(input);
   const evidence = extractEvidence(sourceText);
   const dominantPair = evidence.dominantSignal?.type === "numeric_contrast"
-    ? evidence.dominantSignal.values.slice(0, 2).join(" vs ")
+    ? `${evidence.dominantSignal.high.toLocaleString()} vs ${evidence.dominantSignal.low.toLocaleString()}`
     : "";
   const anchor = dominantPair || evidence.concreteDetails[0] || "";
   const anchor2 = dominantPair ? "views vs likes" : evidence.concreteDetails[1] || "";
@@ -362,6 +362,8 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
+
 
 
 

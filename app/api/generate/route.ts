@@ -121,7 +121,7 @@ function buildPrompt(input: GeneratorInput) {
   const evidenceList = evidence.concreteDetails.join(", ") || "none";
   const patternList = evidence.patterns.join(", ") || "none";
   const dominantSignalText = evidence.dominantSignal
-    ? `${evidence.dominantSignal.type}: ${evidence.dominantSignal.values.join(" vs ")}`
+    ? `${evidence.dominantSignal.type}: ${evidence.dominantSignal.high.toLocaleString()} vs ${evidence.dominantSignal.low.toLocaleString()}`
     : "none";
   const anchoringInstruction = evidence.weakInput
     ? "Evidence is weak. Stay lean and restrained instead of inventing specificity."
@@ -567,6 +567,7 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
+
 
 
 
