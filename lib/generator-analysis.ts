@@ -117,10 +117,13 @@ const SOFT_PHRASES = [
 ];
 
 const HEDGING_PHRASES = [
-  "probably",
   "might",
-  "looks like",
+  "could",
+  "may",
   "seems",
+  "appears",
+  "looks like",
+  "probably",
 ];
 
 const ADVISOR_PHRASES = [
@@ -509,9 +512,14 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     reasons.push("ai filler phrase");
   }
 
+  if (lower.includes("closer look")) {
+    scorePenalty += 15;
+    reasons.push("ai filler phrase");
+  }
+
   for (const phrase of HEDGING_PHRASES) {
     if (lower.includes(phrase)) {
-      scorePenalty += 10;
+      scorePenalty += 12;
       reasons.push("hedging language");
     }
   }
@@ -636,10 +644,17 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
+    const hasDash = text.includes("—") || text.includes("-");
+    const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
       scorePenalty += 20;
       reasons.push("lost numeric contrast");
+    }
+
+    if (!(hasDash && hasNumbers)) {
+      scorePenalty += 10;
+      reasons.push("missing contrast structure");
     }
 
     if (!/\d/.test(text)) {
@@ -887,6 +902,10 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
+
+
 
 
 

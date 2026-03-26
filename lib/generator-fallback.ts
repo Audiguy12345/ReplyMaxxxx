@@ -41,12 +41,12 @@ function toneSet(tone: GeneratorInput["tone"]) {
   switch (tone) {
     case "professional":
       return {
-        close: "Needs a closer look.",
+        close: "This needs fixing.",
         objectionLead: "Fair.",
       };
     case "casual":
       return {
-        close: "Probably needs fixing.",
+        close: "This needs fixing.",
         objectionLead: "Fair.",
       };
     default:
@@ -67,11 +67,11 @@ function buildFallbackDiagnosis(
   if (failureType === "conversion") {
     switch (subtype) {
       case "too_pitchy":
-        return `${detail} is creating pressure before the decision feels safe, so interest leaks before anyone books.`;
+        return `${detail} is creating pressure too early, so people drop before anyone books.`;
       case "low_credibility":
         return `${detail} is asking for trust too early, so the value never gets a fair read.`;
       default:
-        return `${detail} is getting attention, but the value is still too blurry at the decision step, so demos or signups stall.`;
+        return `${detail} is getting attention, but nothing happens after the page view, so demos or signups stall.`;
     }
   }
 
@@ -80,7 +80,7 @@ function buildFallbackDiagnosis(
       case "flat_tone":
         return `${detail} is visible, but the packaging is too flat to earn a stop, so reach turns into passive scrolling.`;
       default:
-        return `${detail} is showing up, but only a small slice is signaling back, so the drop is happening before intent turns into action.`;
+        return `${detail} is showing up, but only a small slice is signaling back, so nothing happens after the first look.`;
     }
   }
 
@@ -111,18 +111,18 @@ function buildFallbackRewrite(
   if (failureType === "conversion") {
     if (subtype === "too_pitchy") {
       return {
-        observant: `${pair} suggests the page is asking for too much too early. Pull the pressure out of the decision step first. ${close}`,
+        observant: `${pair} suggests the page is asking too much too early. Pull the pressure out first. ${close}`,
         curious: `The gap is proof before the demo ask. ${close}`,
-        direct: `The leak looks like premature pitch, not lack of interest. Soften the ask and sharpen the proof. ${close}`,
-        pattern_match: `Seen this pattern before: traffic is qualified, then the page rushes the sale and loses intent. ${close}`,
+        direct: `The ask shows up too fast. People see it, then stop moving. ${close}`,
+        pattern_match: `Seen this pattern before: traffic is qualified, then the page rushes the sale and nothing happens after. ${close}`,
         contrarian_light: `The answer probably is not more traffic. It is less pressure at the moment of choice. ${close}`,
       }[styleLane];
     }
 
     if (subtype === "low_credibility") {
       return {
-        observant: `${pair} reads like trust is lagging behind interest. Add proof before the ask gets bigger. ${close}`,
-        curious: `The better question is what would make the decision feel safer here before anyone books. ${close}`,
+        observant: `${pair} reads like trust is lagging. Add proof before the ask gets bigger. ${close}`,
+        curious: `What would make this feel safer before anyone books? ${close}`,
         direct: `Trust is the gap here. Evidence has to show up before the ask. ${close}`,
         pattern_match: `When bookings stay flat with decent traffic, the missing piece often is credibility, not volume. ${close}`,
         contrarian_light: `A stronger CTA usually does less here than a stronger proof layer. ${close}`,
@@ -130,10 +130,10 @@ function buildFallbackRewrite(
     }
 
     return {
-      observant: `${pair} points to friction after interest. The drop is after attention, not before it. ${close}`,
-      curious: `The drop is between attention and booking. Is that where they hesitate? ${close}`,
+      observant: `${pair} points to a drop after attention. People see it, then nothing happens. ${close}`,
+      curious: `The drop is between attention and booking. Is that where people stop? ${close}`,
       direct: `The drop is between attention and booking. More traffic will not fix that first. ${close}`,
-      pattern_match: `Seen this pattern before: the page gets qualified traffic, but the value and CTA do not survive the moment of choice. ${close}`,
+      pattern_match: `Seen this pattern before: the page gets qualified traffic, but people do not click or book after the first read. ${close}`,
       contrarian_light: `The offer may be fine. The path to saying yes is what looks expensive here. ${close}`,
     }[styleLane];
   }
@@ -150,7 +150,7 @@ function buildFallbackRewrite(
     }
 
     return {
-      observant: `${pair} suggests the work is being seen but not felt fast enough. The hook has to earn the stop sooner. ${close}`,
+      observant: `${pair} suggests people see it, but they do not stop or react fast enough. ${close}`,
       curious: `People are seeing it. The drop is right after the first beat. ${close}`,
       direct: `Posting more is not the answer if the packaging stays flat. The first impression has to create tension immediately. ${close}`,
       pattern_match: `This usually is not a content-quality problem. It is a packaging problem that shows up before the substance gets a chance. ${close}`,
@@ -217,8 +217,8 @@ function buildOpenersByLane(
       normalizedAnchor && normalizedAnchor2 ? `${combo} is an interesting combo. It usually points to a gap in how the problem gets framed first.` : "There is something here most outreach misses. The issue shows up before the offer does.",
     ],
     curious: [
-      normalizedAnchor ? `Curious what's happening after ${normalizedAnchor}. Is that where ${failureType === "conversion" ? "interest stalls" : failureType === "attention" ? "people drop" : "the reply chain goes quiet"}?` : "What's happening right after the first look?",
-      normalizedAnchor ? `${normalizedAnchor} usually means attention is landing but intent is not.` : "People see it, but they are not moving.",
+      normalizedAnchor ? `${normalizedAnchor} — is that where it drops?` : "What's happening right after the first look?",
+      normalizedAnchor ? `${normalizedAnchor} usually means people see it, but they do not move.` : "People see it, but they are not moving.",
       normalizedAnchor ? `${normalizedAnchor} — what's happening right after that?` : "What's happening right after they see it?",
     ],
     direct: [
@@ -229,7 +229,7 @@ function buildOpenersByLane(
     pattern_match: [
       `This reads like a ${failureType === "conversion" ? "decision-step" : failureType === "attention" ? "hook" : "relevance"} problem more than a volume problem.`,
       normalizedAnchor ? `${normalizedAnchor} usually points to the same messaging gap.` : "Seen this pattern before.",
-      `The message likely is not failing on intent. It is failing on feel.`,
+      `The message is not failing on reach. People just are not reacting.` ,
     ],
     contrarian_light: [
       `The problem probably is not the ${failureType === "conversion" ? "offer" : failureType === "attention" ? "content" : "channel"}.`,
@@ -246,10 +246,8 @@ function humanizeLine(text: string, seed: string) {
     (value: string) => value,
     (value: string) => value.replace(/\.$/, ""),
     (value: string) => value.replace(/\.$/, "..."),
-    (value: string) => `${value} — might be off`,
     (value: string) => value.replace(/^Noticed\b/, "Saw"),
     (value: string) => value.replace(/^This reads like\b/, "Feels more like"),
-    (value: string) => value.replace(/^This/, "This might be off but"),
     (value: string) => value.replace(/^The problem probably is not\b/, "Probably not a"),
   ];
 
@@ -301,7 +299,7 @@ function buildFallbackOutput(
     objections: [
       {
         objection: "This is too expensive.",
-        reply: `${toneSet(input.tone).objectionLead} If clearer framing does not create better replies or cleaner decisions, it is not worth paying for.`,
+        reply: `${toneSet(input.tone).objectionLead} If clearer framing does not create better replies or more clicks, it is not worth paying for.` ,
       },
       {
         objection: "Bad timing right now.",
@@ -316,9 +314,9 @@ function buildFallbackOutput(
         objection: "We already use something for this.",
         reply:
           detection.type === "conversion"
-            ? "Using something is not the same as removing the decision friction. The metric is what matters."
+            ? "Using something is not the same as getting more clicks or bookings. The metric is what matters."
             : detection.type === "attention"
-              ? "Posting consistently is not the same as packaging the first beat well enough to earn interest."
+              ? "Posting consistently is not the same as getting people to react."
               : "Using a tool is not the same as getting replies. The gap usually shows up in how the opener lands.",
       },
     ],
@@ -362,6 +360,12 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
+
+
+
+
+
 
 
 
