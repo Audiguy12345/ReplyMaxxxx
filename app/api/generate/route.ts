@@ -1,9 +1,10 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS } from "@/lib/config";
 import {
   buildGeneratorSourceText,
   detectFailureType,
   extractEvidence,
+  scoreSendability,
   selectStyleLane,
   validateGeneratorOutput,
   type GenerationTelemetry,
@@ -285,6 +286,22 @@ function recordTelemetryMetrics(reason: string, telemetry: GenerationTelemetry) 
   return metrics;
 }
 
+function rankOpeners<T extends { openers: string[] }>(output: T, input: GeneratorInput): T {
+  const sourceText = buildGeneratorSourceText(input);
+  const rankedOpeners = [...output.openers]
+    .map((opener) => ({
+      opener,
+      score: scoreSendability(opener, sourceText).score,
+    }))
+    .sort((left, right) => right.score - left.score)
+    .map((entry) => entry.opener);
+
+  return {
+    ...output,
+    openers: rankedOpeners,
+  };
+}
+
 function logTelemetry(reason: string, telemetry: GenerationTelemetry) {
   const metrics = recordTelemetryMetrics(reason, telemetry);
 
@@ -312,7 +329,7 @@ function fallbackResponse(
   logTelemetry(reason, fallback.telemetry);
 
   return jsonResponse(
-    { data: fallback.output },
+    { data: rankOpeners(fallback.output, input) },
     200,
     rateLimitHeaders,
     {
@@ -540,7 +557,7 @@ export async function POST(req: NextRequest) {
       logTelemetry("provider_accepted", providerTelemetry);
 
       return jsonResponse(
-        { data: parsed },
+        { data: rankOpeners(parsed, generatorInput) },
         200,
         rateLimitHeaders,
         {
@@ -567,6 +584,9 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
+
+
+
 
 
 

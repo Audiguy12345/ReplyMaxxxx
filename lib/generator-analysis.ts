@@ -1,4 +1,4 @@
-﻿import type { GeneratorInput, GeneratorOutput } from "@/lib/types";
+import type { GeneratorInput, GeneratorOutput } from "@/lib/types";
 
 export type FailureType = "messaging" | "conversion" | "attention";
 
@@ -52,6 +52,11 @@ export type HumanSignalScore = {
   score: number;
   reasons: string[];
   rubric: HumanSignalRubric;
+};
+
+export type SendabilityScore = {
+  score: number;
+  reasons: string[];
 };
 
 export type ValidationResult = {
@@ -531,6 +536,11 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     }
   }
 
+  if (text.includes("does not") || text.includes("create better")) {
+    scorePenalty += 6;
+    reasons.push("overly formal phrasing");
+  }
+
   for (const phrase of ADVISOR_PHRASES) {
     if (lower.includes(phrase)) {
       scorePenalty += 10;
@@ -644,7 +654,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
-    const hasDash = text.includes("—") || text.includes("-");
+    const hasDash = text.includes("-") || text.includes("—");
     const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
@@ -696,6 +706,52 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   };
 }
 
+export function scoreSendability(text: string, input: string): SendabilityScore {
+  const humanSignal = scoreHumanSignal(text, input);
+  const lower = text.toLowerCase();
+  const reasons = [...humanSignal.reasons];
+  let score = humanSignal.score;
+
+  if (/\b(?:doesn't|isn't|won't|can't|don't)\b/.test(lower)) {
+    score += 4;
+    reasons.push("conversational phrasing");
+  }
+
+  if (/\d/.test(text) && text.includes("-")) {
+    score += 8;
+    reasons.push("clear contrast structure");
+  }
+
+  if (/what's happening|is that where it drops|almost no one acts|that's where it breaks|nothing happens after/.test(lower)) {
+    score += 6;
+    reasons.push("sendable tension");
+  }
+
+  if (/(probably|might|could|may|seems|appears|usually means|looks like)/.test(lower)) {
+    score -= 15;
+    reasons.push("hedging hurts sendability");
+  }
+
+  if (/(intent|interest|decision|credibility|personalization|specificity|relevance|packaging|framing)/.test(lower)) {
+    score -= 10;
+    reasons.push("too abstract for outreach");
+  }
+
+  if (/(lead with|the useful question is|the better question is|call out|this usually improves)/.test(lower)) {
+    score -= 12;
+    reasons.push("advisor phrasing hurts sendability");
+  }
+
+  if (text.length > 120) {
+    score -= 6;
+    reasons.push("too long to send");
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    reasons,
+  };
+}
 export function hasRepetitiveStructure(openers: string[]) {
   const normalizedStarts = openers.map((opener) =>
     opener
@@ -902,6 +958,7 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
 
 
 

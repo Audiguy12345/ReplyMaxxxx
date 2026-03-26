@@ -1,9 +1,10 @@
-﻿import {
+import {
   buildGeneratorSourceText,
   detectFailureType,
   extractEvidence,
   hashString,
   scoreHumanSignal,
+  scoreSendability,
   selectStyleLane,
   stripTrailingPunctuation,
   type FailureDetection,
@@ -41,17 +42,17 @@ function toneSet(tone: GeneratorInput["tone"]) {
   switch (tone) {
     case "professional":
       return {
-        close: "This needs fixing.",
+        close: "That's where it breaks.",
         objectionLead: "Fair.",
       };
     case "casual":
       return {
-        close: "This needs fixing.",
+        close: "That's where it breaks.",
         objectionLead: "Fair.",
       };
     default:
       return {
-        close: "Worth fixing.",
+        close: "That's where it breaks.",
         objectionLead: "Fair.",
       };
   }
@@ -69,16 +70,16 @@ function buildFallbackDiagnosis(
       case "too_pitchy":
         return `${detail} is creating pressure too early, so people drop before anyone books.`;
       case "low_credibility":
-        return `${detail} is asking for trust too early, so the value never gets a fair read.`;
+        return `${detail} asks for trust too early, so people stop before anyone clicks or books.`;
       default:
-        return `${detail} is getting attention, but nothing happens after the page view, so demos or signups stall.`;
+        return `${detail} shows attention is there, but nothing happens after the view.`;
     }
   }
 
   if (failureType === "attention") {
     switch (subtype) {
       case "flat_tone":
-        return `${detail} is visible, but the packaging is too flat to earn a stop, so reach turns into passive scrolling.`;
+        return `${detail} is visible, but the first beat is too flat to earn a stop, so reach turns into passive scrolling.`;
       default:
         return `${detail} is showing up, but only a small slice is signaling back, so nothing happens after the first look.`;
     }
@@ -92,7 +93,7 @@ function buildFallbackDiagnosis(
     case "too_pitchy":
       return `${detail} is leaning into the offer before earning attention, so the message feels like outreach on contact.`;
     default:
-      return `${detail} is probably being skipped because it sounds careful instead of observant, so the reply window closes early.`;
+      return `${detail} sounds careful instead of observed, so the reply window closes early.`;
   }
 }
 
@@ -115,26 +116,26 @@ function buildFallbackRewrite(
         curious: `The gap is proof before the demo ask. ${close}`,
         direct: `The ask shows up too fast. People see it, then stop moving. ${close}`,
         pattern_match: `Seen this pattern before: traffic is qualified, then the page rushes the sale and nothing happens after. ${close}`,
-        contrarian_light: `The answer probably is not more traffic. It is less pressure at the moment of choice. ${close}`,
+        contrarian_light: `More traffic will not fix this. The pressure is landing too early. ${close}`,
       }[styleLane];
     }
 
     if (subtype === "low_credibility") {
       return {
-        observant: `${pair} reads like trust is lagging. Add proof before the ask gets bigger. ${close}`,
+        observant: `${pair} reads like people see it, but they do not trust it yet. Show proof before the ask gets bigger. ${close}`,
         curious: `What would make this feel safer before anyone books? ${close}`,
-        direct: `Trust is the gap here. Evidence has to show up before the ask. ${close}`,
-        pattern_match: `When bookings stay flat with decent traffic, the missing piece often is credibility, not volume. ${close}`,
-        contrarian_light: `A stronger CTA usually does less here than a stronger proof layer. ${close}`,
+        direct: `People are not buying it yet. Proof has to show up before the ask. ${close}`,
+        pattern_match: `When bookings stay flat with decent traffic, the proof is not landing fast enough. ${close}`,
+        contrarian_light: `A stronger CTA will not save this before the proof does. ${close}`,
       }[styleLane];
     }
 
     return {
       observant: `${pair} points to a drop after attention. People see it, then nothing happens. ${close}`,
-      curious: `The drop is between attention and booking. Is that where people stop? ${close}`,
-      direct: `The drop is between attention and booking. More traffic will not fix that first. ${close}`,
+      curious: `People see it, then no one books. Is that where it breaks? ${close}`,
+      direct: `People see it, then no one books. More traffic won't fix that first. ${close}`,
       pattern_match: `Seen this pattern before: the page gets qualified traffic, but people do not click or book after the first read. ${close}`,
-      contrarian_light: `The offer may be fine. The path to saying yes is what looks expensive here. ${close}`,
+      contrarian_light: `The offer is not the problem. People just are not taking the next step. ${close}`,
     }[styleLane];
   }
 
@@ -143,8 +144,8 @@ function buildFallbackRewrite(
       return {
         observant: `${pair} feels too polite on entry. The first beat needs more contrast to earn a stop. ${close}`,
         curious: `The hook is not earning the stop yet. ${close}`,
-        direct: `The packaging is too flat. More posting will not compensate for a soft first impression. ${close}`,
-        pattern_match: `This pattern usually is not bad content. It is content introduced with too little tension. ${close}`,
+        direct: `The first beat is too flat. More posting won't fix a soft first impression. ${close}`,
+        pattern_match: `This is not bad content. It is getting introduced with too little tension. ${close}`,
         contrarian_light: `Polished hooks often underperform when the real issue is lack of bite. ${close}`,
       }[styleLane];
     }
@@ -152,18 +153,18 @@ function buildFallbackRewrite(
     return {
       observant: `${pair} suggests people see it, but they do not stop or react fast enough. ${close}`,
       curious: `People are seeing it. The drop is right after the first beat. ${close}`,
-      direct: `Posting more is not the answer if the packaging stays flat. The first impression has to create tension immediately. ${close}`,
-      pattern_match: `This usually is not a content-quality problem. It is a packaging problem that shows up before the substance gets a chance. ${close}`,
-      contrarian_light: `Better content often underperforms when it is introduced too politely. A stronger hook usually matters more than another post. ${close}`,
+      direct: `Posting more isn't the answer if the first beat stays flat. The first impression has to create tension fast. ${close}`,
+      pattern_match: `This is not a content problem. The first beat is too soft before the substance gets a chance. ${close}`,
+      contrarian_light: `Better content still dies when the first beat is too polite. A stronger hook matters more than another post. ${close}`,
     }[styleLane];
   }
 
   if (subtype === "generic_opener") {
     return {
-      observant: `${pair} makes this feel like the first line could go to anyone. Lead with what is actually distinct here. ${close}`,
+      observant: `${pair} makes this feel like the first line could go to anyone. Use what is actually distinct here. ${close}`,
       curious: `A better version asks from something real in the input, not from a stock outreach setup. ${close}`,
       direct: `The opener is generic. Use the actual miss instead. ${close}`,
-      pattern_match: `This usually improves when the opener sounds noticed instead of composed for broad use. ${close}`,
+      pattern_match: `This improves when the opener sounds noticed instead of composed for broad use. ${close}`,
       contrarian_light: `Extra polish will not save a generic first line. Specificity will. ${close}`,
     }[styleLane];
   }
@@ -171,29 +172,29 @@ function buildFallbackRewrite(
   if (subtype === "weak_relevance") {
     return {
       observant: `${pair} is a usable anchor, but the line still needs to prove it noticed this case and not a category. ${close}`,
-      curious: `The next version should ask from the real context, not from a generic messaging theory. ${close}`,
-      direct: `The problem is not effort. It is relevance that still feels one step too abstract. ${close}`,
+      curious: `The next version should ask from the real context, not from a generic theory. ${close}`,
+      direct: `The problem is not effort. The line still does not land fast enough. ${close}`,
       pattern_match: `Seen this before: the point is valid, but it lands like a category read instead of a real observation. ${close}`,
-      contrarian_light: `Personalization is not the same as relevance. The line has to sound earned. ${close}`,
+      contrarian_light: `More detail is not the same as a real hit. The line has to sound earned. ${close}`,
     }[styleLane];
   }
 
   if (subtype === "too_pitchy") {
     return {
-      observant: `${pair} makes the message feel like it is selling before it has earned attention. Lead with the miss, not the service. ${close}`,
+      observant: `${pair} makes the message feel like it is selling before it has earned attention. Use the miss, not the service. ${close}`,
       curious: `A better version asks what is getting skipped first, then leaves the offer out of the opener. ${close}`,
       direct: `Strip the pitch. Name the miss. Ask one question. Stop there. ${close}`,
-      pattern_match: `This usually improves when the opener stops sounding like outreach and starts sounding like a real observation. ${close}`,
-      contrarian_light: `More offer language usually suppresses replies here, not improves them. ${close}`,
+      pattern_match: `This improves when the opener stops sounding like outreach and starts sounding like a real observation. ${close}`,
+      contrarian_light: `More offer language suppresses replies here, not improves them. ${close}`,
     }[styleLane];
   }
 
   return {
-    observant: `${pair} makes this feel like the first line is doing too little work. Lead with that problem before the offer shows up. ${close}`,
-    curious: `A better version asks what is getting ignored first, then leaves room for a short reply instead of forcing a pitch. ${close}`,
-    direct: `Strip the sales setup. Call out the skipped opener or the dead reply chain in plain language, then stop. ${close}`,
-    pattern_match: `This usually improves when the opener names the real miss, not the service. The message should sound noticed, not prepared. ${close}`,
-    contrarian_light: `More personalization will not help if the first line still sounds like outreach. The fix is sharper framing, not extra polish. ${close}`,
+    observant: `${pair} makes this feel like the first line is doing too little work. Start with that problem before the offer shows up. ${close}`,
+    curious: `A better version asks what is getting ignored first, then leaves room for a short reply. ${close}`,
+    direct: `Strip the sales setup. Name the skipped opener or the dead reply chain, then stop. ${close}`,
+    pattern_match: `This improves when the opener names the real miss, not the service. The message should sound noticed, not prepared. ${close}`,
+    contrarian_light: `More detail will not help if the first line still sounds like outreach. The fix is a sharper first hit, not extra polish. ${close}`,
   }[styleLane];
 }
 
@@ -212,29 +213,29 @@ function buildOpenersByLane(
 
   const laneMap: Record<StyleLane, string[]> = {
     observant: [
-      normalizedAnchor ? `${normalizedAnchor} stood out. Usually that is where ${failureType === "conversion" ? "decisions slow down" : failureType === "attention" ? "people stop scrolling past" : "replies start dying"}.` : "One thing stood out. The first impression is probably doing less work than it should.",
-      normalizedAnchor ? `Noticed ${normalizedAnchor}. That tends to make the whole message feel easier to skip.` : "Noticed a pattern here. It looks more like framing than effort.",
-      normalizedAnchor && normalizedAnchor2 ? `${combo} is an interesting combo. It usually points to a gap in how the problem gets framed first.` : "There is something here most outreach misses. The issue shows up before the offer does.",
+      normalizedAnchor ? `${normalizedAnchor} stood out. That's where ${failureType === "conversion" ? "people stop before booking" : failureType === "attention" ? "people keep scrolling" : "replies start dying"}.` : "One thing stood out. The first impression is doing too little work.",
+      normalizedAnchor ? `Noticed ${normalizedAnchor}. That tends to make the whole message easier to skip.` : "Noticed a pattern here. Effort is not what is breaking.",
+      normalizedAnchor && normalizedAnchor2 ? `${combo} is the tell. The gap shows up before the real point lands.` : "The issue shows up before the ask does.",
     ],
     curious: [
-      normalizedAnchor ? `${normalizedAnchor} — is that where it drops?` : "What's happening right after the first look?",
-      normalizedAnchor ? `${normalizedAnchor} usually means people see it, but they do not move.` : "People see it, but they are not moving.",
-      normalizedAnchor ? `${normalizedAnchor} — what's happening right after that?` : "What's happening right after they see it?",
+      normalizedAnchor ? `${normalizedAnchor} - is that where it drops?` : "What's happening right after the first look?",
+      normalizedAnchor ? `${normalizedAnchor} - almost no one acts.` : "People see it, but almost no one acts.",
+      normalizedAnchor ? `${normalizedAnchor} - what's happening right after that?` : "What's happening right after they see it?",
     ],
     direct: [
-      normalizedAnchor ? `${normalizedAnchor} probably changes the way ${failureType === "conversion" ? "bookings" : failureType === "attention" ? "clicks" : "replies"} come in.` : "This probably affects response rate more than it looks.",
-      `Most ${failureType === "attention" ? "posts" : "messages"} lose people in the first line. This looks fixable.`,
-      `The issue here does not look like effort. It looks like ${subtype === "weak_relevance" ? "relevance" : subtype === "too_pitchy" ? "framing" : "timing"}.`,
+      normalizedAnchor ? `${normalizedAnchor} - that's where ${failureType === "conversion" ? "bookings drop" : failureType === "attention" ? "clicks die" : "replies die"}.` : "That's where response rate breaks.",
+      `Most ${failureType === "attention" ? "posts" : "messages"} lose people in the first line. That's where it breaks.`,
+      `The issue here isn't effort. It's ${subtype === "weak_relevance" ? "the line still feels generic" : subtype === "too_pitchy" ? "the ask shows up too early" : "the drop happens too early"}.`,
     ],
     pattern_match: [
-      `This reads like a ${failureType === "conversion" ? "decision-step" : failureType === "attention" ? "hook" : "relevance"} problem more than a volume problem.`,
-      normalizedAnchor ? `${normalizedAnchor} usually points to the same messaging gap.` : "Seen this pattern before.",
-      `The message is not failing on reach. People just are not reacting.` ,
+      `This reads like a ${failureType === "conversion" ? "drop before booking" : failureType === "attention" ? "hook" : "first-line miss"} problem more than a volume problem.`,
+      normalizedAnchor ? `${normalizedAnchor} points to the same gap every time.` : "Seen this pattern before.",
+      `People are seeing it. They just are not reacting.` ,
     ],
     contrarian_light: [
-      `The problem probably is not the ${failureType === "conversion" ? "offer" : failureType === "attention" ? "content" : "channel"}.`,
-      `More ${failureType === "attention" ? "posting" : "outreach"} usually makes this worse, not better.`,
-      `Polished messaging can actually suppress replies here.`,
+      `The ${failureType === "conversion" ? "offer" : failureType === "attention" ? "content" : "channel"} is not the problem.`,
+      `More ${failureType === "attention" ? "posting" : "outreach"} makes this worse, not better.`,
+      `Polished messaging can kill replies here.`,
     ],
   };
 
@@ -248,7 +249,7 @@ function humanizeLine(text: string, seed: string) {
     (value: string) => value.replace(/\.$/, "..."),
     (value: string) => value.replace(/^Noticed\b/, "Saw"),
     (value: string) => value.replace(/^This reads like\b/, "Feels more like"),
-    (value: string) => value.replace(/^The problem probably is not\b/, "Probably not a"),
+    (value: string) => value.replace(/^The\s+(offer|content|channel)\s+is not the problem\b/i, "$1 is not the problem"),
   ];
 
   return variants[hashString(seed) % variants.length](text);
@@ -279,6 +280,14 @@ function buildFallbackOutput(
     return humanizeLine(base, `${sourceText}:${ctx.subtype}:${index}`);
   });
 
+  const rankedOpeners = orderedOpeners
+    .map((opener) => ({
+      opener,
+      score: scoreSendability(opener, sourceText).score,
+    }))
+    .sort((left, right) => right.score - left.score)
+    .map((entry) => entry.opener);
+
   const output: GeneratorOutput = {
     positioningAngle: buildFallbackDiagnosis(
       detection.type,
@@ -286,38 +295,38 @@ function buildFallbackOutput(
       anchor || input.extraContext || input.currentMessage || input.offer
     ),
     ctaRecommendation:
-      "Lead with the visible problem first, then ask one direct question that is easy to answer.",
-    openers: orderedOpeners,
+      "Start with the visible problem. Ask one direct question.",
+    openers: rankedOpeners,
     followUps: [
       buildFallbackRewrite(detection.type, ctx.subtype, ctx.styleLane, evidence, input),
       detection.type === "conversion"
-        ? "If the page is already getting attention, the next gain usually comes from clarifying the choice, not buying more traffic."
+        ? "If the page is already getting attention, the next gain comes from making the next step obvious, not buying more traffic."
         : detection.type === "attention"
-          ? "If views are present but clicks stay flat, the first packaging beat is usually too soft to do its job."
-          : "If the conversation keeps dying, the first line is usually sounding prepared instead of noticed.",
+          ? "If views are present but clicks stay flat, the first beat is too soft to do its job."
+          : "If the conversation keeps dying, the first line sounds written, not noticed.",
     ],
     objections: [
       {
         objection: "This is too expensive.",
-        reply: `${toneSet(input.tone).objectionLead} If clearer framing does not create better replies or more clicks, it is not worth paying for.` ,
+        reply: `${toneSet(input.tone).objectionLead} If a sharper first line doesn't get more replies or clicks, it isn't worth paying for.` ,
       },
       {
         objection: "Bad timing right now.",
         reply:
           detection.type === "conversion"
-            ? "Fair. If the leak is already in the funnel, waiting usually just burns more demand through the same weak step."
+            ? "Fair. If the leak is already in the funnel, waiting just burns more demand through the same weak step."
             : detection.type === "attention"
               ? "Fair. Timing matters less when the hook still is not earning a stop on contact."
-              : "Fair. Bad timing usually means the ask should get smaller, not that the messaging issue disappears.",
+              : "Fair. Bad timing means the ask should get smaller, not that the messaging issue disappears.",
       },
       {
         objection: "We already use something for this.",
         reply:
           detection.type === "conversion"
-            ? "Using something is not the same as getting more clicks or bookings. The metric is what matters."
+            ? "Using something isn't the same as getting more clicks or bookings. The metric is what matters."
             : detection.type === "attention"
-              ? "Posting consistently is not the same as getting people to react."
-              : "Using a tool is not the same as getting replies. The gap usually shows up in how the opener lands.",
+              ? "Posting consistently isn't the same as getting people to react."
+              : "Using a tool isn't the same as getting replies. The gap shows up in the first line.",
       },
     ],
   };
@@ -360,6 +369,10 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
+
+
+
 
 
 
