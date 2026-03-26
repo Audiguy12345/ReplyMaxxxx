@@ -245,8 +245,11 @@ function humanizeLine(text: string, seed: string) {
   const variants = [
     (value: string) => value,
     (value: string) => value.replace(/\.$/, ""),
+    (value: string) => value.replace(/\.$/, "..."),
+    (value: string) => `${value} — might be off`,
     (value: string) => value.replace(/^Noticed\b/, "Saw"),
     (value: string) => value.replace(/^This reads like\b/, "Feels more like"),
+    (value: string) => value.replace(/^This/, "This might be off but"),
     (value: string) => value.replace(/^The problem probably is not\b/, "Probably not a"),
   ];
 
@@ -356,6 +359,7 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
 
 
 

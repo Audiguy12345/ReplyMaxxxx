@@ -85,6 +85,15 @@ const HARD_BANNED_PHRASES = [
   "would love to connect",
 ];
 
+const VAGUE_PHRASES = [
+  "something here",
+  "worth looking at",
+  "interesting",
+  "could be improved",
+  "seems like",
+  "might be",
+];
+
 const EVIDENCE_PRIORITY: Record<string, number> = {
   traffic: 100,
   demo: 95,
@@ -325,6 +334,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   const reasons: string[] = [];
   const lower = text.toLowerCase();
   const evidence = extractEvidence(input);
+  let scorePenalty = 0;
 
   const rubric: HumanSignalRubric = {
     specificity: 100,
@@ -342,18 +352,27 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     }
   }
 
+  for (const phrase of VAGUE_PHRASES) {
+    if (lower.includes(phrase)) {
+      scorePenalty += 6;
+      reasons.push(`vague phrasing: ${phrase}`);
+    }
+  }
+
   if (/[!?]{2,}/.test(text)) {
     rubric.naturalRhythm -= 15;
     reasons.push("overpunctuated");
   }
 
   if (/^[A-Z][^.]+\.\s[A-Z][^.]+\.$/.test(text.trim())) {
+    scorePenalty += 15;
     rubric.naturalRhythm -= 10;
     rubric.nonTemplateFeel -= 8;
     reasons.push("too structurally perfect");
   }
 
   if ((text.match(/,/g) || []).length > 3) {
+    scorePenalty += 10;
     rubric.naturalRhythm -= 6;
     reasons.push("over-structured sentence flow");
   }
@@ -395,6 +414,16 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     reasons.push("invalid opener pronoun");
   }
 
+  if (!/(problem|gap|miss|losing|drop|leak|fail|issue)/i.test(text)) {
+    scorePenalty += 8;
+    reasons.push("low tension / no clear problem signal");
+  }
+
+  if (!hasConcreteAnchor(text, input)) {
+    scorePenalty += 20;
+    reasons.push("no concrete anchor to input");
+  }
+
   if (!evidence.weakInput && !hasConcreteAnchor(text, input)) {
     rubric.specificity -= 22;
     rubric.openerRelevance -= 12;
@@ -412,7 +441,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   }
 
   return {
-    score: Math.max(0, average(Object.values(rubric))),
+    score: Math.max(0, average(Object.values(rubric)) - scorePenalty),
     reasons,
     rubric,
   };
@@ -611,6 +640,11 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
+
+
+
 
 
 

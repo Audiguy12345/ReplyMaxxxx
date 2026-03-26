@@ -507,7 +507,12 @@ export async function POST(req: NextRequest) {
         hardFailures: validation.hardFailures,
       };
 
-      if (!validation.valid || validation.humanSignal.score < 75) {
+      const shouldFallback =
+        !validation.valid ||
+        validation.humanSignal.score < 75 ||
+        (validation.humanSignal.score < 82 && Math.random() < 0.3);
+
+      if (shouldFallback) {
         console.error("Provider output failed quality validation:", validation);
         logTelemetry("provider_quality_rejected", providerTelemetry);
         return fallbackResponse(
@@ -515,7 +520,9 @@ export async function POST(req: NextRequest) {
           rateLimitHeaders,
           validation.humanSignal.score < 75
             ? "low_human_signal_strict"
-            : "provider_hard_validation_failed"
+            : validation.humanSignal.score < 82
+              ? "borderline_human_signal_bias"
+              : "provider_hard_validation_failed"
         );
       }
 
@@ -553,6 +560,7 @@ export async function POST(req: NextRequest) {
     return jsonResponse(body, 500, rateLimitHeaders);
   }
 }
+
 
 
 
