@@ -109,6 +109,30 @@ const WEAK_OPENER_PHRASES = [
   "something feels",
 ];
 
+const SOFT_PHRASES = [
+  "looks fixable",
+  "needs a closer look",
+  "might be",
+  "could be",
+];
+
+const HEDGING_PHRASES = [
+  "probably",
+  "might",
+  "looks like",
+  "seems",
+];
+
+const ADVISOR_PHRASES = [
+  "the useful question is",
+  "the better question is",
+  "call out",
+  "lead with",
+  "replace the",
+  "this usually improves when",
+  "open with the question",
+];
+
 const EVIDENCE_PRIORITY: Record<string, number> = {
   traffic: 100,
   demo: 95,
@@ -394,6 +418,43 @@ export function extractEvidence(input: string): ExtractedEvidence {
   };
 }
 
+function hasSpecificSignalReference(text: string, input: string): boolean {
+  const lowerText = text.toLowerCase();
+  const evidence = extractEvidence(input);
+  const signalTerms = new Set<string>([
+    ...evidence.numericAnchors.map((anchor) => anchor.toLowerCase()),
+    ...evidence.patterns.flatMap((pattern) => pattern.toLowerCase().split(/\W+/)),
+    ...input.toLowerCase().match(/views|likes|clicks|messages|reply|replies|booking|bookings|demo|demos|ctr|engagement/g) || [],
+  ]);
+
+  for (const term of signalTerms) {
+    if (term && lowerText.includes(term)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function diagnosisLooksMisaligned(text: string, input: string): boolean {
+  const lowerText = text.toLowerCase();
+  const lowerInput = input.toLowerCase();
+
+  if (/views|likes|clicks|engagement/.test(lowerInput) && /timing/.test(lowerText)) {
+    return true;
+  }
+
+  if (/reply|replies|response/.test(lowerInput) && /scroll|hook|views/.test(lowerText)) {
+    return true;
+  }
+
+  if (/demo|bookings|conversion|cta/.test(lowerInput) && /channel/.test(lowerText)) {
+    return true;
+  }
+
+  return false;
+}
+
 export function hasConcreteAnchor(text: string, input: string): boolean {
   const inputTokens = input
     .toLowerCase()
@@ -446,6 +507,27 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (lower.includes("worth looking at")) {
     scorePenalty += 15;
     reasons.push("ai filler phrase");
+  }
+
+  for (const phrase of HEDGING_PHRASES) {
+    if (lower.includes(phrase)) {
+      scorePenalty += 10;
+      reasons.push("hedging language");
+    }
+  }
+
+  for (const phrase of SOFT_PHRASES) {
+    if (lower.includes(phrase)) {
+      scorePenalty += 8;
+      reasons.push("soft phrasing");
+    }
+  }
+
+  for (const phrase of ADVISOR_PHRASES) {
+    if (lower.includes(phrase)) {
+      scorePenalty += 10;
+      reasons.push("advisor mode phrasing");
+    }
   }
 
   for (const phrase of WEAK_OPENER_PHRASES) {
@@ -520,9 +602,19 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     reasons.push("not grounded in observable metric");
   }
 
+  if (!text.match(/10|views|likes|clicks|messages|reply/i)) {
+    scorePenalty += 12;
+    reasons.push("not tied to specific signal");
+  }
+
   if (!/(but|however|instead|yet)/i.test(text)) {
     scorePenalty += 8;
     reasons.push("missing contrast/tension");
+  }
+
+  if (diagnosisLooksMisaligned(text, input)) {
+    scorePenalty += 15;
+    reasons.push("misaligned diagnosis");
   }
 
   if (evidence.numericAnchors.length > 0) {
@@ -726,6 +818,7 @@ export function validateGeneratorOutput(
   }
 
   let anchoredOpeners = 0;
+  let signalAnchoredOpeners = 0;
 
   if (hasRepetitiveStructure(output.openers)) {
     hardFailures.push("repetitive opener structure");
@@ -736,6 +829,10 @@ export function validateGeneratorOutput(
 
     if (hasConcreteAnchor(opener, sourceText)) {
       anchoredOpeners += 1;
+    }
+
+    if (hasSpecificSignalReference(opener, sourceText)) {
+      signalAnchoredOpeners += 1;
     }
 
     if (openerValidation.hardFailures.length > 0) {
@@ -757,6 +854,14 @@ export function validateGeneratorOutput(
 
   if (!evidence.weakInput && anchoredOpeners < 2) {
     hardFailures.push("insufficient anchored openers");
+  }
+
+  if (!evidence.weakInput && signalAnchoredOpeners < 2) {
+    hardFailures.push("insufficient signal-anchored openers");
+  }
+
+  if (diagnosisLooksMisaligned(fullText, sourceText)) {
+    hardFailures.push("misaligned diagnosis");
   }
 
   const lower = fullText.toLowerCase();
@@ -782,6 +887,11 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
+
+
+
 
 
 

@@ -112,7 +112,7 @@ function buildFallbackRewrite(
     if (subtype === "too_pitchy") {
       return {
         observant: `${pair} suggests the page is asking for too much too early. Pull the pressure out of the decision step first. ${close}`,
-        curious: `The useful question is whether the page is proving enough value before it asks for a demo. ${close}`,
+        curious: `The gap is proof before the demo ask. ${close}`,
         direct: `The leak looks like premature pitch, not lack of interest. Soften the ask and sharpen the proof. ${close}`,
         pattern_match: `Seen this pattern before: traffic is qualified, then the page rushes the sale and loses intent. ${close}`,
         contrarian_light: `The answer probably is not more traffic. It is less pressure at the moment of choice. ${close}`,
@@ -123,16 +123,16 @@ function buildFallbackRewrite(
       return {
         observant: `${pair} reads like trust is lagging behind interest. Add proof before the ask gets bigger. ${close}`,
         curious: `The better question is what would make the decision feel safer here before anyone books. ${close}`,
-        direct: `This is a trust gap. The page needs evidence before it asks for commitment. ${close}`,
+        direct: `Trust is the gap here. Evidence has to show up before the ask. ${close}`,
         pattern_match: `When bookings stay flat with decent traffic, the missing piece often is credibility, not volume. ${close}`,
         contrarian_light: `A stronger CTA usually does less here than a stronger proof layer. ${close}`,
       }[styleLane];
     }
 
     return {
-      observant: `${pair} points to friction after interest, not a top-of-funnel problem. Lead with the stuck decision point. ${close}`,
-      curious: `Open with the question behind the drop-off: are people interested and then hesitating, or never seeing enough value to act? ${close}`,
-      direct: `Call out the leak between attention and booking. More traffic is not the first fix when the decision step is weak. ${close}`,
+      observant: `${pair} points to friction after interest. The drop is after attention, not before it. ${close}`,
+      curious: `The drop is between attention and booking. Is that where they hesitate? ${close}`,
+      direct: `The drop is between attention and booking. More traffic will not fix that first. ${close}`,
       pattern_match: `Seen this pattern before: the page gets qualified traffic, but the value and CTA do not survive the moment of choice. ${close}`,
       contrarian_light: `The offer may be fine. The path to saying yes is what looks expensive here. ${close}`,
     }[styleLane];
@@ -142,7 +142,7 @@ function buildFallbackRewrite(
     if (subtype === "flat_tone") {
       return {
         observant: `${pair} feels too polite on entry. The first beat needs more contrast to earn a stop. ${close}`,
-        curious: `The better question is whether the hook says anything sharp enough to interrupt the scroll. ${close}`,
+        curious: `The hook is not earning the stop yet. ${close}`,
         direct: `The packaging is too flat. More posting will not compensate for a soft first impression. ${close}`,
         pattern_match: `This pattern usually is not bad content. It is content introduced with too little tension. ${close}`,
         contrarian_light: `Polished hooks often underperform when the real issue is lack of bite. ${close}`,
@@ -151,7 +151,7 @@ function buildFallbackRewrite(
 
     return {
       observant: `${pair} suggests the work is being seen but not felt fast enough. The hook has to earn the stop sooner. ${close}`,
-      curious: `The useful question is whether people are seeing it and scrolling, or clicking and losing interest right after the first beat. ${close}`,
+      curious: `People are seeing it. The drop is right after the first beat. ${close}`,
       direct: `Posting more is not the answer if the packaging stays flat. The first impression has to create tension immediately. ${close}`,
       pattern_match: `This usually is not a content-quality problem. It is a packaging problem that shows up before the substance gets a chance. ${close}`,
       contrarian_light: `Better content often underperforms when it is introduced too politely. A stronger hook usually matters more than another post. ${close}`,
@@ -162,7 +162,7 @@ function buildFallbackRewrite(
     return {
       observant: `${pair} makes this feel like the first line could go to anyone. Lead with what is actually distinct here. ${close}`,
       curious: `A better version asks from something real in the input, not from a stock outreach setup. ${close}`,
-      direct: `The opener is too generic. Replace the setup line with an actual observed miss. ${close}`,
+      direct: `The opener is generic. Use the actual miss instead. ${close}`,
       pattern_match: `This usually improves when the opener sounds noticed instead of composed for broad use. ${close}`,
       contrarian_light: `Extra polish will not save a generic first line. Specificity will. ${close}`,
     }[styleLane];
@@ -182,7 +182,7 @@ function buildFallbackRewrite(
     return {
       observant: `${pair} makes the message feel like it is selling before it has earned attention. Lead with the miss, not the service. ${close}`,
       curious: `A better version asks what is getting skipped first, then leaves the offer out of the opener. ${close}`,
-      direct: `Strip the pitch. Name the failure, ask one clean question, and stop there. ${close}`,
+      direct: `Strip the pitch. Name the miss. Ask one question. Stop there. ${close}`,
       pattern_match: `This usually improves when the opener stops sounding like outreach and starts sounding like a real observation. ${close}`,
       contrarian_light: `More offer language usually suppresses replies here, not improves them. ${close}`,
     }[styleLane];
@@ -362,6 +362,7 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
 
 
 
