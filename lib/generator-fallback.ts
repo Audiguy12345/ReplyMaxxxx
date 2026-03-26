@@ -241,17 +241,16 @@ function buildOpenersByLane(
   return laneMap[styleLane];
 }
 
-function humanize(text: string, seed: string) {
-  const variations = [
-    (t: string) => t,
-    (t: string) => t.replace(/\.$/, ""),
-    (t: string) => `${t} — might be off`,
-    (t: string) => t.replace("Noticed", "Saw"),
-    (t: string) => t.replace("This", "That"),
+function humanizeLine(text: string, seed: string) {
+  const variants = [
+    (value: string) => value,
+    (value: string) => value.replace(/\.$/, ""),
+    (value: string) => value.replace(/^Noticed\b/, "Saw"),
+    (value: string) => value.replace(/^This reads like\b/, "Feels more like"),
+    (value: string) => value.replace(/^The problem probably is not\b/, "Probably not a"),
   ];
 
-  const variant = variations[hashString(seed) % variations.length];
-  return variant(text);
+  return variants[hashString(seed) % variants.length](text);
 }
 
 function buildFallbackOutput(
@@ -272,8 +271,8 @@ function buildFallbackOutput(
   );
   const startIndex = hashString(sourceText + ctx.subtype) % openersByLane.length;
   const orderedOpeners = Array.from({ length: 3 }, (_, index) => {
-    const openerRaw = openersByLane[(startIndex + index) % openersByLane.length];
-    return humanize(openerRaw, `${sourceText}${ctx.subtype}${index}`);
+    const base = openersByLane[(startIndex + index) % openersByLane.length];
+    return humanizeLine(base, `${sourceText}:${ctx.subtype}:${index}`);
   });
 
   const output: GeneratorOutput = {
@@ -357,4 +356,6 @@ export function generateFallbackOutput(
     styleLane,
   });
 }
+
+
 

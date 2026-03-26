@@ -347,14 +347,15 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     reasons.push("overpunctuated");
   }
 
-  if (/^[A-Z][^.]+\.\s[A-Z][^.]+\.$/.test(text)) {
-    rubric.naturalRhythm -= 8;
+  if (/^[A-Z][^.]+\.\s[A-Z][^.]+\.$/.test(text.trim())) {
+    rubric.naturalRhythm -= 10;
+    rubric.nonTemplateFeel -= 8;
     reasons.push("too structurally perfect");
   }
 
-  if (text.split(",").length > 3) {
-    rubric.naturalRhythm -= 5;
-    reasons.push("over-structured sentence");
+  if ((text.match(/,/g) || []).length > 3) {
+    rubric.naturalRhythm -= 6;
+    reasons.push("over-structured sentence flow");
   }
 
   const wordCount = text.split(/\s+/).filter(Boolean).length;
@@ -417,10 +418,18 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   };
 }
 
-function hasRepetitiveStructure(openers: string[]): boolean {
-  const starts = openers.map((opener) => (opener.split(" ")[0] || "").toLowerCase());
-  const unique = new Set(starts);
-  return unique.size < openers.length;
+export function hasRepetitiveStructure(openers: string[]) {
+  const normalizedStarts = openers.map((opener) =>
+    opener
+      .trim()
+      .toLowerCase()
+      .replace(/[^\w\s]/g, "")
+      .split(/\s+/)
+      .slice(0, 2)
+      .join(" ")
+  );
+
+  return new Set(normalizedStarts).size < openers.length;
 }
 
 export function validateOutput(text: string, input: string): ValidationResult {
@@ -455,16 +464,44 @@ export function validateOutput(text: string, input: string): ValidationResult {
 
   const humanSignal = scoreHumanSignal(text, input);
 
-  if (humanSignal.score < 70) {
+  if (humanSignal.score < 80) {
     softWarnings.push(...humanSignal.reasons);
   }
 
   return {
-    valid: hardFailures.length === 0 && humanSignal.score >= 60,
+    valid: hardFailures.length === 0 && humanSignal.score >= 75,
     hardFailures,
     softWarnings,
     humanSignal,
   };
+}
+
+function preservesCurrentMessageIntent(
+  currentMessage: string,
+  output: GeneratorOutput
+) {
+  const currentTokens = new Set(
+    currentMessage
+      .toLowerCase()
+      .split(/\W+/)
+      .filter((token) => token.length > 4)
+  );
+
+  const outputText = [
+    output.positioningAngle,
+    ...output.openers,
+    ...output.followUps,
+    ...output.objections.map((item) => `${item.objection} ${item.reply}`),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  let overlap = 0;
+  currentTokens.forEach((token) => {
+    if (outputText.includes(token)) overlap += 1;
+  });
+
+  return overlap >= 2;
 }
 
 export function validateGeneratorOutput(
@@ -487,7 +524,7 @@ export function validateGeneratorOutput(
   const aggregateHumanSignal = scoreHumanSignal(fullText, sourceText);
   const evidence = extractEvidence(sourceText);
 
-  if (aggregateHumanSignal.score < 70) {
+  if (aggregateHumanSignal.score < 80) {
     softWarnings.push(...aggregateHumanSignal.reasons);
   }
 
@@ -507,6 +544,14 @@ export function validateGeneratorOutput(
 
   if (!evidence.weakInput && !hasConcreteAnchor(fullText, sourceText)) {
     hardFailures.push("missing concrete anchor");
+  }
+
+  if (
+    input.currentMessage &&
+    input.currentMessage.trim().length > 0 &&
+    !preservesCurrentMessageIntent(input.currentMessage, output)
+  ) {
+    hardFailures.push("current message intent not preserved");
   }
 
   let anchoredOpeners = 0;
@@ -560,12 +605,15 @@ export function validateGeneratorOutput(
   }
 
   return {
-    valid: hardFailures.length === 0 && aggregateHumanSignal.score >= 60,
+    valid: hardFailures.length === 0 && aggregateHumanSignal.score >= 75,
     hardFailures,
     softWarnings,
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
+
 
 
 
