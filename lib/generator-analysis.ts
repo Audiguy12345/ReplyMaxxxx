@@ -207,6 +207,7 @@ export function buildGeneratorSourceText(
     [
       input.audience,
       input.offer,
+      input.dropOffStage,
       input.extraContext || "",
       input.currentMessage || "",
       input.platform,
@@ -654,7 +655,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
-    const hasDash = text.includes("-") || text.includes("â€”");
+    const hasDash = text.includes("-") || text.includes("—");
     const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
@@ -717,7 +718,7 @@ export function scoreSendability(text: string, input: string): SendabilityScore 
     reasons.push("conversational phrasing");
   }
 
-  if (/\d/.test(text) && text.includes("-")) {
+  if (/\d/.test(text) && (text.includes("-") || text.includes("—"))) {
     score += 8;
     reasons.push("clear contrast structure");
   }
@@ -908,6 +909,8 @@ export function validateGeneratorOutput(
     humanSignal: aggregateHumanSignal,
   };
 }
+
+
 
 
 
