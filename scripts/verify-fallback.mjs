@@ -3,13 +3,14 @@ import { spawn } from "node:child_process";
 const port = 3301;
 const rootUrl = `http://127.0.0.1:${port}`;
 const requestBody = {
-  audience: "B2B SaaS founders with strong traffic but weak demo conversion",
-  offer: "I rewrite landing page copy to increase booked demos without buying more traffic",
+  audience: "B2B SaaS founders getting clicks on LinkedIn but not enough replies from outbound.",
+  offer: "I rewrite outbound messaging to turn more qualified conversations into booked calls from the same demand.",
   platform: "linkedin",
   tone: "direct",
-  extraContext: "CTA clarity and problem framing are usually the bottlenecks.",
+  extraContext: "The leak usually happens after the click when the message gets too generic.",
+  dropOffStage: "clicks_to_replies",
   currentMessage:
-    "Saw your team is already investing in traffic, but the CTA gets buried. Want me to send a quick rewrite idea?",
+    "You are already getting clicks, but the message after the click is not giving people a reason to reply.",
 };
 
 function assert(condition, message) {
@@ -18,48 +19,28 @@ function assert(condition, message) {
   }
 }
 
-function createWrappedProviderResponse() {
-  return [
-    "```json",
-    JSON.stringify(
-      {
-        positioningAngle:
-          "Lead with the conversion leak: traffic is already there, but the page is not turning interest into demos.",
-        ctaRecommendation:
-          "Offer a quick teardown of the CTA and problem framing instead of asking for a full call.",
-        openers: [
-          "You already did the hard part and got traffic. The weaker link looks like demo conversion.",
-          "Most teams buy more traffic before fixing the page friction that is suppressing demos.",
-          "Your funnel probably does not need more visitors first. It needs a sharper path to the demo.",
-        ],
-        followUps: [
-          "I can send one concrete rewrite for the hero and CTA so you can judge it fast.",
-          "If helpful, I will point out the exact line where interest is probably dropping.",
-        ],
-        objections: [
-          {
-            objection: "We already have a copywriter.",
-            reply:
-              "That helps. I am not replacing the whole page, just pressure-testing the few lines that affect demo intent most.",
-          },
-          {
-            objection: "We need more traffic, not copy edits.",
-            reply:
-              "More traffic helps only if the page converts the existing intent well. Fixing that first usually makes paid acquisition work harder.",
-          },
-          {
-            objection: "Send details first.",
-            reply:
-              "Happy to. I can send one before-and-after rewrite so you can see whether the angle is worth discussing.",
-          },
-        ],
-      },
-      null,
-      2
-    ),
-    "```",
-    "Extra trailing text that should be ignored.",
-  ].join("\n");
+function createValidProviderResponse() {
+  return JSON.stringify({
+    primaryRewrite:
+      "You're getting clicks, but almost no one replies. That's the leak right after the click.",
+    angleVariations: [
+      "You're getting clicks, but replies drop right after the click. That's where it breaks.",
+      "Clicks happen, but replies drop right after the click. That's the leak to fix.",
+    ],
+    followUp:
+      "Clicks are there, but replies drop right after the click. That's the leak to fix.",
+  });
+}
+
+function createLowQualityProviderResponse() {
+  return JSON.stringify({
+    primaryRewrite: "I wanted to reach out because your message could be improved.",
+    angleVariations: [
+      "We help teams like yours get better replies.",
+      "This seems like it needs a closer look.",
+    ],
+    followUp: "Would love to chat about this.",
+  });
 }
 
 async function waitForServer() {
@@ -82,20 +63,24 @@ async function waitForServer() {
 function shapeLooksValid(data) {
   return (
     data &&
-    typeof data.positioningAngle === "string" &&
-    typeof data.ctaRecommendation === "string" &&
-    Array.isArray(data.openers) &&
-    data.openers.length === 3 &&
-    Array.isArray(data.followUps) &&
-    data.followUps.length === 2 &&
-    Array.isArray(data.objections) &&
-    data.objections.length === 3 &&
-    data.objections.every(
+    typeof data.problem === "string" &&
+    typeof data.why === "string" &&
+    typeof data.whatIsHappening === "string" &&
+    typeof data.primaryRewrite === "string" &&
+    Array.isArray(data.angleVariations) &&
+    data.angleVariations.length === 2 &&
+    typeof data.followUp === "string" &&
+    Array.isArray(data.objectionHandling) &&
+    data.objectionHandling.length === 3 &&
+    data.objectionHandling.every(
       (item) =>
         item &&
         typeof item.objection === "string" &&
         typeof item.reply === "string"
-    )
+    ) &&
+    typeof data.cta === "string" &&
+    typeof data.whatChanged === "string" &&
+    typeof data.expectedImpact === "string"
   );
 }
 
@@ -142,10 +127,42 @@ function startServer(env) {
   return { server, stderrRef };
 }
 
-const fallbackRun = startServer({
+async function runScenario(envOverrides) {
+  const run = startServer({
+    ...process.env,
+    OPENAI_API_KEY: "",
+    OPENROUTER_API_KEY: "",
+    OPENROUTER_MOCK_RESPONSE: "",
+    ...envOverrides,
+  });
+
+  try {
+    await waitForServer();
+
+    const res = await fetch(`${rootUrl}/api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    return {
+      status: res.status,
+      source: res.headers.get("x-generator-source"),
+      reason: res.headers.get("x-generator-reason"),
+      payload: await res.json(),
+    };
+  } finally {
+    await stopServer(run.server, run.stderrRef);
+  }
+}
+
+const pageRun = startServer({
   ...process.env,
   OPENAI_API_KEY: "",
   OPENROUTER_API_KEY: "",
+  OPENROUTER_MOCK_RESPONSE: "",
 });
 
 try {
@@ -154,78 +171,78 @@ try {
   const pageRes = await fetch(`${rootUrl}/`);
   assert(pageRes.ok, `Home page failed with status ${pageRes.status}`);
 
-  const apiRes = await fetch(`${rootUrl}/api/generate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  await stopServer(pageRun.server, pageRun.stderrRef);
 
-  const payload = await apiRes.json();
+  const fallbackResult = await runScenario({});
+  assert(fallbackResult.status === 200, `Fallback API returned ${fallbackResult.status}`);
+  assert(fallbackResult.source === "fallback", "Expected fallback source when no provider key is configured.");
+  assert(fallbackResult.reason === "provider_unavailable", "Expected provider_unavailable when no provider key is configured.");
+  assert(shapeLooksValid(fallbackResult.payload.data), "Fallback payload shape is invalid.");
 
-  assert(apiRes.ok, `API returned ${apiRes.status}`);
-  assert(
-    apiRes.headers.get("x-generator-source") === "fallback",
-    "Expected fallback source when no provider key is configured."
-  );
-  assert(
-    apiRes.headers.get("x-generator-reason") === "provider_request_failed",
-    "Expected fallback reason header for provider failure."
-  );
-  assert(payload && shapeLooksValid(payload.data), "Fallback payload shape is invalid.");
-
-  await stopServer(fallbackRun.server, fallbackRun.stderrRef);
-
-  const providerRun = startServer({
-    ...process.env,
+  const validProviderResult = await runScenario({
     OPENROUTER_API_KEY: "mock-key",
-    OPENROUTER_MOCK_RESPONSE: createWrappedProviderResponse(),
+    OPENROUTER_MOCK_RESPONSE: createValidProviderResponse(),
   });
+  assert(validProviderResult.status === 200, `Valid provider API returned ${validProviderResult.status}`);
+  assert(validProviderResult.source === "provider", "Expected provider source when provider JSON is accepted.");
+  assert(validProviderResult.reason === "provider_rewrite_applied", "Expected provider_rewrite_applied for valid provider JSON.");
+  assert(shapeLooksValid(validProviderResult.payload.data), "Valid provider payload shape is invalid.");
+  assert(validProviderResult.payload.data.problem === fallbackResult.payload.data.problem, "Problem should stay deterministic.");
+  assert(validProviderResult.payload.data.why === fallbackResult.payload.data.why, "Why should stay deterministic.");
+  assert(validProviderResult.payload.data.whatIsHappening === fallbackResult.payload.data.whatIsHappening, "WhatIsHappening should stay deterministic.");
+  assert(validProviderResult.payload.data.whatChanged === fallbackResult.payload.data.whatChanged, "WhatChanged should stay deterministic.");
+  assert(validProviderResult.payload.data.expectedImpact === fallbackResult.payload.data.expectedImpact, "ExpectedImpact should stay deterministic.");
 
-  await waitForServer();
+  const providerRewriteSet = new Set([
+    "You're getting clicks, but almost no one replies. That's the leak right after the click.",
+    "You're getting clicks, but replies drop right after the click. That's where it breaks.",
+    "Clicks happen, but replies drop right after the click. That's the leak to fix.",
+  ]);
+  const returnedRewriteSet = [
+    validProviderResult.payload.data.primaryRewrite,
+    ...validProviderResult.payload.data.angleVariations,
+  ];
+  assert(
+    returnedRewriteSet.every((text) => providerRewriteSet.has(text)),
+    "Rewrite set should come entirely from the accepted provider payload after reranking."
+  );
+  assert(
+    validProviderResult.payload.data.followUp ===
+      "Clicks are there, but replies drop right after the click. That's the leak to fix.",
+    "Follow-up should come from the accepted provider payload."
+  );
 
-  const providerRes = await fetch(`${rootUrl}/api/generate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
+  const invalidJsonResult = await runScenario({
+    OPENROUTER_API_KEY: "mock-key",
+    OPENROUTER_MOCK_RESPONSE: "```json\n{\"primaryRewrite\":\"bad\"}\n```",
   });
+  assert(invalidJsonResult.status === 200, `Invalid JSON API returned ${invalidJsonResult.status}`);
+  assert(invalidJsonResult.source === "fallback", "Expected fallback source for invalid provider JSON.");
+  assert(invalidJsonResult.reason === "provider_rewrite_invalid_json", "Expected provider_rewrite_invalid_json for markdown-wrapped provider output.");
 
-  const providerPayload = await providerRes.json();
-
-  assert(providerRes.ok, `Provider-path API returned ${providerRes.status}`);
-  assert(
-    providerRes.headers.get("x-generator-source") === "provider",
-    "Expected provider source for wrapped mock response."
-  );
-  assert(
-    providerRes.headers.get("x-generator-parse-mode") === "recovered",
-    "Expected recovered parse mode for wrapped mock response."
-  );
-  assert(
-    providerPayload && shapeLooksValid(providerPayload.data),
-    "Recovered provider payload shape is invalid."
-  );
+  const lowQualityResult = await runScenario({
+    OPENROUTER_API_KEY: "mock-key",
+    OPENROUTER_MOCK_RESPONSE: createLowQualityProviderResponse(),
+  });
+  assert(lowQualityResult.status === 200, `Low-quality provider API returned ${lowQualityResult.status}`);
+  assert(lowQualityResult.source === "fallback", "Expected fallback source for low-quality provider output.");
+  assert(lowQualityResult.reason === "provider_rewrite_quality_rejected", "Expected provider_rewrite_quality_rejected for weak provider output.");
 
   console.log(
     JSON.stringify(
       {
         ok: true,
-        source: apiRes.headers.get("x-generator-source"),
-        fallbackReason: apiRes.headers.get("x-generator-reason"),
         pageStatus: pageRes.status,
-        apiStatus: apiRes.status,
-        recoveredSource: providerRes.headers.get("x-generator-source"),
-        recoveredParseMode: providerRes.headers.get("x-generator-parse-mode"),
+        fallbackReason: fallbackResult.reason,
+        providerReason: validProviderResult.reason,
+        invalidJsonReason: invalidJsonResult.reason,
+        lowQualityReason: lowQualityResult.reason,
+        primaryRewrite: validProviderResult.payload.data.primaryRewrite,
       },
       null,
       2
     )
   );
-
-  await stopServer(providerRun.server, providerRun.stderrRef);
 } finally {
-  await stopServer(fallbackRun.server, fallbackRun.stderrRef);
+  await stopServer(pageRun.server, pageRun.stderrRef);
 }
