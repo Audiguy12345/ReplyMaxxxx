@@ -1,4 +1,4 @@
-export type Platform = "email" | "linkedin" | "twitter" | "instagram";
+export type Platform = "email" | "linkedin" | "twitter" | "reddit" | "instagram";
 export type Tone = "professional" | "casual" | "aggressive" | "direct";
 export type DropOffStage =
   | "views_to_clicks"

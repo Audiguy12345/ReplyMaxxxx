@@ -14,12 +14,25 @@ import type {
   Tone,
 } from "@/lib/types";
 
-const platform: Platform = "linkedin";
-const tone: Tone = "direct";
+const platformOptions: Array<{ value: Platform; label: string }> = [
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "reddit", label: "Reddit" },
+  { value: "instagram", label: "Instagram" },
+  { value: "twitter", label: "Twitter" },
+  { value: "email", label: "Email" },
+];
+
+const toneOptions: Array<{ value: Tone; label: string }> = [
+  { value: "direct", label: "Direct" },
+  { value: "professional", label: "Professional" },
+  { value: "casual", label: "Casual" },
+  { value: "aggressive", label: "Aggressive" },
+];
+
 const dropOffStages: Array<{ value: DropOffStage; label: string }> = [
-  { value: "views_to_clicks", label: "views → clicks" },
-  { value: "clicks_to_replies", label: "clicks → replies" },
-  { value: "replies_to_booked_calls", label: "replies → booked calls" },
+  { value: "views_to_clicks", label: "views -> clicks" },
+  { value: "clicks_to_replies", label: "clicks -> replies" },
+  { value: "replies_to_booked_calls", label: "replies -> booked calls" },
 ];
 const QUOTA_EXHAUSTED_MESSAGE =
   "Generation is temporarily unavailable while credits are being replenished. Check back shortly.";
@@ -46,6 +59,9 @@ export function GeneratorForm() {
   const [audience, setAudience] = useState("");
   const [offer, setOffer] = useState("");
   const [currentMessage, setCurrentMessage] = useState("");
+  const [platform, setPlatform] = useState<Platform>("linkedin");
+  const [tone, setTone] = useState<Tone>("direct");
+  const [extraContext, setExtraContext] = useState("");
   const [dropOffStage, setDropOffStage] = useState<DropOffStage>("replies_to_booked_calls");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -114,6 +130,7 @@ export function GeneratorForm() {
           dropOffStage,
           platform,
           tone,
+          extraContext,
         }),
       });
 
@@ -165,10 +182,13 @@ export function GeneratorForm() {
           <button
             type="button"
             onClick={() => {
-              setAudience("SaaS founders with solid attention but weak booked-call conversion");
-              setOffer("I fix outbound messaging so more replies turn into booked calls without more traffic");
-              setCurrentMessage("You are getting replies, but something is breaking between interest and the booked call.");
+              setAudience("early-stage B2B SaaS founders");
+              setOffer("help turning traffic into more booked demos");
+              setCurrentMessage("Hey - noticed you're getting traffic. We help SaaS companies improve conversions. Want to chat?");
               setDropOffStage("replies_to_booked_calls");
+              setPlatform("linkedin");
+              setTone("direct");
+              setExtraContext("10,000 views but only 100 signals back");
             }}
             className="font-mono-ui inline-flex rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-[11px] uppercase tracking-[0.1em] text-zinc-400 transition hover:border-zinc-500 hover:text-white"
           >
@@ -214,6 +234,42 @@ export function GeneratorForm() {
             />
           </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                Platform
+              </label>
+              <select
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value as Platform)}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-zinc-700"
+              >
+                {platformOptions.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                Tone
+              </label>
+              <select
+                value={tone}
+                onChange={(e) => setTone(e.target.value as Tone)}
+                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-zinc-700"
+              >
+                {toneOptions.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
               Where are you losing people?
@@ -229,6 +285,18 @@ export function GeneratorForm() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+              Extra context
+            </label>
+            <textarea
+              value={extraContext}
+              onChange={(e) => setExtraContext(e.target.value)}
+              placeholder="Example: 10,000 views but only 100 signals back"
+              className="min-h-[96px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
+            />
           </div>
 
           {quotaExhausted ? (

@@ -77,11 +77,36 @@ export function ProductMockup() {
                 </p>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                    Platform
+                  </div>
+                  <p className="text-sm text-white">LinkedIn</p>
+                </div>
+
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                    Tone
+                  </div>
+                  <p className="text-sm text-white">Direct</p>
+                </div>
+              </div>
+
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                 <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
                   Where are you losing people?
                 </div>
-                <p className="text-sm text-white">replies → booked calls</p>
+                <p className="text-sm text-white">{"replies -> booked calls"}</p>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                  Extra context
+                </div>
+                <p className="text-sm leading-6 text-zinc-200">
+                  10,000 views but only 100 signals back
+                </p>
               </div>
 
               <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-lg">
