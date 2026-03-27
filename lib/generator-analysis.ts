@@ -479,6 +479,16 @@ export function hasConcreteAnchor(text: string, input: string): boolean {
   return inputTokens.some((token) => textLower.includes(token));
 }
 
+export function endsWithQuestion(text: string) {
+  return text.trim().endsWith("?");
+}
+
+function usesPurelyDeclarativePattern(text: string) {
+  return /\bthis is happening\b|\bthat is where it breaks\b|\bthat's where it breaks\b/i.test(
+    text
+  );
+}
+
 function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
@@ -655,7 +665,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
-    const hasDash = text.includes("-") || text.includes("—");
+    const hasDash = text.includes("-") || text.includes("ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â");
     const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
@@ -718,7 +728,7 @@ export function scoreSendability(text: string, input: string): SendabilityScore 
     reasons.push("conversational phrasing");
   }
 
-  if (/\d/.test(text) && (text.includes("-") || text.includes("—"))) {
+  if (/\d/.test(text) && (text.includes("-") || text.includes("ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â"))) {
     score += 8;
     reasons.push("clear contrast structure");
   }
@@ -797,6 +807,18 @@ export function validateOutput(text: string, input: string): ValidationResult {
     }
   }
 
+  if (!endsWithQuestion(text)) {
+    hardFailures.push("rewrite must end with question");
+  }
+
+  if (!hasSpecificSignalReference(text, input) && !hasConcreteAnchor(text, input)) {
+    hardFailures.push("rewrite not tied to user's situation");
+  }
+
+  if (usesPurelyDeclarativePattern(text)) {
+    hardFailures.push("rewrite stays purely declarative");
+  }
+
   const humanSignal = scoreHumanSignal(text, input);
 
   if (humanSignal.score < 80) {
@@ -864,6 +886,10 @@ export function validateGeneratorOutput(
 
   if (output.angleVariations.length !== 2) {
     hardFailures.push("wrong angle variation count");
+  }
+
+  if (!endsWithQuestion(output.followUp)) {
+    hardFailures.push("follow-up must end with question");
   }
 
   if (!preservesCurrentMessageIntent(input.currentMessage, output)) {

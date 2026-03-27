@@ -155,6 +155,8 @@ Your job:
 - Use concrete details if they exist
 - If numeric contrast exists, use it
 - Make the next action feel obvious
+- End each rewrite and the follow-up with a question
+- Do not return purely declarative lines like "that is where it breaks"
 
 Return ONLY valid JSON in this shape:
 {

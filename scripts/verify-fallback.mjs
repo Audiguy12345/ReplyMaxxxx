@@ -22,13 +22,13 @@ function assert(condition, message) {
 function createValidProviderResponse() {
   return JSON.stringify({
     primaryRewrite:
-      "You're getting clicks, but almost no one replies. That's the leak right after the click.",
+      "You're getting clicks, but replies drop right after the click. What are people seeing right after they click?",
     angleVariations: [
-      "You're getting clicks, but replies drop right after the click. That's where it breaks.",
-      "Clicks happen, but replies drop right after the click. That's the leak to fix.",
+      "You're getting clicks, but almost no one replies. Where do you think that drop is happening?",
+      "Clicks happen, but replies drop right after the click. What is the first thing they see after they click?",
     ],
     followUp:
-      "Clicks are there, but replies drop right after the click. That's the leak to fix.",
+      "If clicks are already there but replies are not, is the drop happening in the first line or after they understand the offer?",
   });
 }
 
@@ -194,9 +194,9 @@ try {
   assert(validProviderResult.payload.data.expectedImpact === fallbackResult.payload.data.expectedImpact, "ExpectedImpact should stay deterministic.");
 
   const providerRewriteSet = new Set([
-    "You're getting clicks, but almost no one replies. That's the leak right after the click.",
-    "You're getting clicks, but replies drop right after the click. That's where it breaks.",
-    "Clicks happen, but replies drop right after the click. That's the leak to fix.",
+    "You're getting clicks, but replies drop right after the click. What are people seeing right after they click?",
+    "You're getting clicks, but almost no one replies. Where do you think that drop is happening?",
+    "Clicks happen, but replies drop right after the click. What is the first thing they see after they click?",
   ]);
   const returnedRewriteSet = [
     validProviderResult.payload.data.primaryRewrite,
@@ -208,7 +208,7 @@ try {
   );
   assert(
     validProviderResult.payload.data.followUp ===
-      "Clicks are there, but replies drop right after the click. That's the leak to fix.",
+      "If clicks are already there but replies are not, is the drop happening in the first line or after they understand the offer?",
     "Follow-up should come from the accepted provider payload."
   );
 

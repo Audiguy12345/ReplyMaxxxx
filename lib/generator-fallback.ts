@@ -57,6 +57,7 @@ function buildWhatIsHappening(input: GeneratorInput) {
 function buildAnchor(input: GeneratorInput) {
   const sourceText = buildGeneratorSourceText(input);
   const evidence = extractEvidence(sourceText);
+
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     return `${evidence.dominantSignal.high.toLocaleString()} vs ${evidence.dominantSignal.low.toLocaleString()}`;
   }
@@ -66,47 +67,47 @@ function buildAnchor(input: GeneratorInput) {
 
 function buildPrimaryRewrite(input: GeneratorInput, anchor: string) {
   if (input.dropOffStage === "views_to_clicks") {
-    return `${anchor} says people see it, but they are not clicking. That's the part worth fixing first.`;
+    return `${anchor} is getting seen, but almost no one clicks. What are you using right now to turn those views into clicks?`;
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return `${anchor} is getting clicks, but not enough replies. The gap looks like what happens right after the click.`;
+    return `${anchor} is getting clicks, but replies drop right after the click. What are people seeing right after they click?`;
   }
 
-  return `${anchor} is getting attention, but people are not moving to book. The drop looks like it happens between reply and booked call.`;
+  return `${anchor} is getting replies, but booked calls still do not happen. What are you using right now to turn that reply into a booked call?`;
 }
 
 function buildAngleVariations(input: GeneratorInput, anchor: string) {
   if (input.dropOffStage === "views_to_clicks") {
     return [
-      `${anchor} is getting seen, but almost no one clicks. That is where it breaks.`,
-      `${anchor} shows attention is there. The click just is not happening after the first read.`,
+      `${anchor} gets attention, but the click still drops right after the first look. Where do you think that break is happening?`,
+      `${anchor} already proves people see it, but the next action still does not happen. What is the step between the view and the click right now?`,
     ];
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
     return [
-      `${anchor} gets the click, but not the reply. That is the leak.`,
-      `${anchor} is doing enough to get opened, but not enough to make someone answer back.`,
+      `${anchor} gets the click, but the reply dies right after. Where do you think that drop is happening?`,
+      `${anchor} is already earning attention, but the conversation still stalls. What is the first thing they see after they click?`,
     ];
   }
 
   return [
-    `${anchor} gets attention, but not enough booked calls. That is the leak.`,
-    `${anchor} is getting replies, but they are not turning into booked calls. That is where it breaks.`,
+    `${anchor} gets replies, but the booking step still leaks. Where do you think people stop before the call?`,
+    `${anchor} already has interest, but the booked call still does not happen. What is the next step after they reply right now?`,
   ];
 }
 
 function buildFollowUp(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "The first job is earning the click. More visibility will not fix a weak first step.";
+    return "If more views are landing but clicks stay flat, the leak is in the first step. Where do you think that drop happens after the view?";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "The click is already happening. The next gain comes from making the reply feel easier than ignoring it.";
+    return "If clicks are already there but replies are not, the leak is in the step right after the click. Is the drop happening in the first line or after they understand the offer?";
   }
 
-  return "The reply is already happening. The next gain comes from making the booking step feel obvious and low-friction.";
+  return "If replies are already there but calls are not, the leak is in the booking step. What happens between the reply and the booking link right now?";
 }
 
 function buildObjectionHandling(input: GeneratorInput): GeneratorOutput["objectionHandling"] {
@@ -131,26 +132,26 @@ function buildObjectionHandling(input: GeneratorInput): GeneratorOutput["objecti
 
 function buildCta(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "Start with the click leak. Ask one direct question that makes the next click feel obvious.";
+    return "What are you currently doing to turn those views into clicks?";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "Start with the reply leak. Ask one direct question that makes answering feel easy.";
+    return "Where do you think the drop is happening after the click right now?";
   }
 
-  return "Start with the booking leak. Ask one direct question that makes the booking step feel easier to take.";
+  return "What is the current step between the reply and the booked call?";
 }
 
 function buildWhatChanged(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "Before: generic setup, weak pull, no click tension. After: specific observation, clear leak, stronger reason to click.";
+    return "Before: generic setup, weak pull, no click tension. After: specific observation, clear leak, and a question that opens the conversation.";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "Before: interest without response. After: specific observation, clearer gap, easier reason to reply.";
+    return "Before: interest without response. After: specific observation, a clearer gap, and a question that invites a reply.";
   }
 
-  return "Before: value without movement. After: clearer leak, sharper reason to act, stronger path to the booked call.";
+  return "Before: value without movement. After: clearer leak, sharper reason to act, and a question that opens the booking conversation.";
 }
 
 function buildExpectedImpact(input: GeneratorInput) {
@@ -191,7 +192,12 @@ export function generateFallbackOutput(
   const generatorInput = input as GeneratorInput;
   const sourceText = buildGeneratorSourceText(generatorInput);
   const resolvedDetection = detection || detectFailureType(sourceText);
-  const styleLane = resolvedDetection.type === "attention" ? "curious" : resolvedDetection.type === "conversion" ? "direct" : "observant";
+  const styleLane =
+    resolvedDetection.type === "attention"
+      ? "curious"
+      : resolvedDetection.type === "conversion"
+        ? "direct"
+        : "observant";
   const anchor = buildAnchor(generatorInput);
   const ranked = rankRewriteSet(
     buildPrimaryRewrite(generatorInput, anchor),
