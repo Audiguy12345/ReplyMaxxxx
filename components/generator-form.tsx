@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { ResultCard } from "@/components/result-card";
@@ -6,6 +6,7 @@ import { PaywallCard } from "@/components/paywall-card";
 import { CopyButton } from "@/components/copy-button";
 import { FREE_GENERATIONS, STORAGE_KEY } from "@/lib/config";
 import type {
+  DropOffStage,
   GenerateApiError,
   GenerateApiResponse,
   GeneratorOutput,
@@ -13,8 +14,13 @@ import type {
   Tone,
 } from "@/lib/types";
 
-const platforms: Platform[] = ["email", "linkedin", "twitter", "instagram"];
-const tones: Tone[] = ["professional", "casual", "aggressive", "direct"];
+const platform: Platform = "linkedin";
+const tone: Tone = "direct";
+const dropOffStages: Array<{ value: DropOffStage; label: string }> = [
+  { value: "views_to_clicks", label: "views → clicks" },
+  { value: "clicks_to_replies", label: "clicks → replies" },
+  { value: "replies_to_booked_calls", label: "replies → booked calls" },
+];
 const QUOTA_EXHAUSTED_MESSAGE =
   "Generation is temporarily unavailable while credits are being replenished. Check back shortly.";
 
@@ -40,9 +46,7 @@ export function GeneratorForm() {
   const [audience, setAudience] = useState("");
   const [offer, setOffer] = useState("");
   const [currentMessage, setCurrentMessage] = useState("");
-  const [platform, setPlatform] = useState<Platform>("linkedin");
-  const [tone, setTone] = useState<Tone>("direct");
-  const [extraContext, setExtraContext] = useState("");
+  const [dropOffStage, setDropOffStage] = useState<DropOffStage>("replies_to_booked_calls");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<GeneratorOutput | null>(null);
@@ -76,7 +80,7 @@ export function GeneratorForm() {
         storage.setItem(STORAGE_KEY, String(next));
       }
     } catch {
-      // Ignore storage failures and keep the session usable.
+      // Ignore storage failures.
     }
   }
 
@@ -107,9 +111,9 @@ export function GeneratorForm() {
           audience,
           offer,
           currentMessage,
+          dropOffStage,
           platform,
           tone,
-          extraContext,
         }),
       });
 
@@ -120,29 +124,25 @@ export function GeneratorForm() {
           setQuotaExhausted(true);
         }
 
-        throw new Error(
-          "error" in json ? json.error : "Something went wrong."
-        );
+        throw new Error("error" in json ? json.error : "Something went wrong.");
       }
 
       setResult(json.data);
       incrementUsage();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to generate.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Failed to generate.");
     } finally {
       setLoading(false);
     }
   }
 
   const buttonLabel = loading
-    ? "Generating outreach..."
+    ? "Fixing outreach..."
     : quotaExhausted
     ? "Generation unavailable"
     : isLocked
     ? "Upgrade to continue"
-    : "Generate outreach";
+    : "Fix outreach";
 
   return (
     <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -153,7 +153,7 @@ export function GeneratorForm() {
               Product input
             </p>
             <h2 className="font-editorial mt-3 text-3xl tracking-[-0.02em] text-white">
-              Generate outreach you can send today.
+              Fix broken outreach.
             </h2>
           </div>
           <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
@@ -165,11 +165,10 @@ export function GeneratorForm() {
           <button
             type="button"
             onClick={() => {
-              setAudience("B2B SaaS founders with strong traffic but weak demo conversion");
-              setOffer("I rewrite landing page copy to increase booked demos without buying more traffic");
-              setCurrentMessage(
-                "Saw your team is already investing in traffic, but the CTA gets buried. I help SaaS founders tighten the message so more of that traffic turns into demos. Want me to send a quick rewrite idea?"
-              );
+              setAudience("SaaS founders with solid attention but weak booked-call conversion");
+              setOffer("I fix outbound messaging so more replies turn into booked calls without more traffic");
+              setCurrentMessage("You are getting replies, but something is breaking between interest and the booked call.");
+              setDropOffStage("replies_to_booked_calls");
             }}
             className="font-mono-ui inline-flex rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-[11px] uppercase tracking-[0.1em] text-zinc-400 transition hover:border-zinc-500 hover:text-white"
           >
@@ -178,12 +177,12 @@ export function GeneratorForm() {
 
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Target audience
+              Target
             </label>
             <textarea
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
-              placeholder="Example: B2B SaaS founders getting traffic but struggling to convert to demos"
+              placeholder="Example: SaaS founders getting replies but not enough booked calls"
               className="min-h-[110px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
               required
             />
@@ -191,12 +190,12 @@ export function GeneratorForm() {
 
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Your offer
+              Offer
             </label>
             <textarea
               value={offer}
               onChange={(e) => setOffer(e.target.value)}
-              placeholder="Example: I rewrite landing pages to increase demo conversions by 20-40%"
+              placeholder="Example: I fix outbound messaging so more conversations turn into booked calls"
               className="min-h-[110px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
               required
             />
@@ -204,62 +203,32 @@ export function GeneratorForm() {
 
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Current outreach / optional
+              Current message
             </label>
             <textarea
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
-              placeholder="Paste a DM you've been sending..."
-              className="min-h-[88px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
+              placeholder="Paste the message you are sending now..."
+              className="min-h-[120px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
+              required
             />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Platform
-              </label>
-              <select
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value as Platform)}
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-zinc-700"
-              >
-                {platforms.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Tone
-              </label>
-              <select
-                value={tone}
-                onChange={(e) => setTone(e.target.value as Tone)}
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-zinc-700"
-              >
-                {tones.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-              Extra context
+              Where are you losing people?
             </label>
-            <textarea
-              value={extraContext}
-              onChange={(e) => setExtraContext(e.target.value)}
-              placeholder="Optional: niche, proof, price, target outcome, or constraints"
-              className="min-h-[90px] w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-[14px] leading-6 text-zinc-200 outline-none transition placeholder:text-zinc-500 focus:border-zinc-700"
-            />
+            <select
+              value={dropOffStage}
+              onChange={(e) => setDropOffStage(e.target.value as DropOffStage)}
+              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-white outline-none transition focus:border-zinc-700"
+            >
+              {dropOffStages.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {quotaExhausted ? (
@@ -291,27 +260,19 @@ export function GeneratorForm() {
           <div className="space-y-6">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
               <p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Live preview
+                Problem
               </p>
-              <div className="mt-5 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-                <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                  Example opener / linkedin / direct
-                </div>
-                <p className="mt-3 text-sm leading-7 text-zinc-200">
-                  Hey, noticed you are running traffic to a page that buries the CTA.
-                  I fix this exact problem. Fixed it for three SaaS founders last month.
-                  Worth ten minutes?
-                </p>
-              </div>
+              <p className="mt-3 text-sm italic leading-7 text-zinc-300">
+                You are getting attention, but people are not moving to book. The drop is happening between interest and action.
+              </p>
             </div>
 
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-70">
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-80">
               <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                Follow-up
+                Why
               </div>
               <p className="mt-3 text-sm leading-7 text-zinc-400">
-                No pressure. Just figured the traffic you are paying for deserves a
-                page that converts it.
+                The message shows value, but does not create enough clarity or pressure to take the next step.
               </p>
             </div>
           </div>
@@ -321,36 +282,126 @@ export function GeneratorForm() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    Positioning angle
+                    Problem
                   </p>
                   <p className="mt-3 text-sm italic leading-7 text-zinc-300">
-                    {result.positioningAngle}
+                    {result.problem}
                   </p>
                 </div>
-                <CopyButton value={result.positioningAngle} />
+                <CopyButton value={result.problem} />
               </div>
             </div>
-
-            <ResultCard title="Openers" items={result.openers} />
-            <ResultCard title="Follow-ups" items={result.followUps} />
-            <ResultCard
-              title="Objection replies"
-              items={result.objections.map(
-                (item) => `${item.objection}\n\n${item.reply}`
-              )}
-            />
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    CTA recommendation
+                    Why
                   </p>
                   <p className="mt-3 text-sm leading-7 text-zinc-200">
-                    {result.ctaRecommendation}
+                    {result.why}
                   </p>
                 </div>
-                <CopyButton value={result.ctaRecommendation} />
+                <CopyButton value={result.why} />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                    What&apos;s happening
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-zinc-200">
+                    {result.whatIsHappening}
+                  </p>
+                </div>
+                <CopyButton value={result.whatIsHappening} />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="font-editorial text-2xl tracking-[-0.02em] text-white">
+                Sequence to increase booked calls
+              </h3>
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                      Primary rewrite
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-zinc-200">
+                      {result.primaryRewrite}
+                    </p>
+                  </div>
+                  <CopyButton value={result.primaryRewrite} />
+                </div>
+              </div>
+
+              <ResultCard title="Angle variation" items={result.angleVariations} />
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                      Follow-up
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-zinc-200">
+                      {result.followUp}
+                    </p>
+                  </div>
+                  <CopyButton value={result.followUp} />
+                </div>
+              </div>
+
+              <ResultCard
+                title="Objection handling"
+                items={result.objectionHandling.map(
+                  (item) => `${item.objection}\n\n${item.reply}`
+                )}
+              />
+
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                      CTA
+                    </p>
+                    <p className="mt-3 text-sm leading-7 text-zinc-200">
+                      {result.cta}
+                    </p>
+                  </div>
+                  <CopyButton value={result.cta} />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                    What changed
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-zinc-200 whitespace-pre-wrap">
+                    {result.whatChanged}
+                  </p>
+                </div>
+                <CopyButton value={result.whatChanged} />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                    Expected impact
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-zinc-200">
+                    {result.expectedImpact}
+                  </p>
+                </div>
+                <CopyButton value={result.expectedImpact} />
               </div>
             </div>
           </>

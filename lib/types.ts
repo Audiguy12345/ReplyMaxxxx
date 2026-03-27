@@ -1,24 +1,34 @@
 export type Platform = "email" | "linkedin" | "twitter" | "instagram";
 export type Tone = "professional" | "casual" | "aggressive" | "direct";
+export type DropOffStage =
+  | "views_to_clicks"
+  | "clicks_to_replies"
+  | "replies_to_booked_calls";
 
 export interface GeneratorInput {
   audience: string;
   offer: string;
+  currentMessage: string;
+  dropOffStage: DropOffStage;
   platform: Platform;
   tone: Tone;
   extraContext?: string;
-  currentMessage?: string;
 }
 
 export interface GeneratorOutput {
-  positioningAngle: string;
-  ctaRecommendation: string;
-  openers: string[];
-  followUps: string[];
-  objections: {
+  problem: string;
+  why: string;
+  whatIsHappening: string;
+  primaryRewrite: string;
+  angleVariations: string[];
+  followUp: string;
+  objectionHandling: {
     objection: string;
     reply: string;
   }[];
+  cta: string;
+  whatChanged: string;
+  expectedImpact: string;
 }
 
 export interface GenerateApiResponse {

@@ -200,7 +200,7 @@ export function hashString(input: string): number {
 export function buildGeneratorSourceText(
   input: Pick<
     GeneratorInput,
-    "audience" | "offer" | "extraContext" | "currentMessage" | "platform" | "tone"
+    "audience" | "offer" | "dropOffStage" | "extraContext" | "currentMessage" | "platform" | "tone"
   >
 ) {
   return normalizeWhitespace(
@@ -654,7 +654,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
-    const hasDash = text.includes("-") || text.includes("—");
+    const hasDash = text.includes("-") || text.includes("â€”");
     const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
@@ -821,14 +821,7 @@ function preservesCurrentMessageIntent(
       .filter((token) => token.length > 4)
   );
 
-  const outputText = [
-    output.positioningAngle,
-    ...output.openers,
-    ...output.followUps,
-    ...output.objections.map((item) => `${item.objection} ${item.reply}`),
-  ]
-    .join(" ")
-    .toLowerCase();
+  const outputText = output.primaryRewrite.toLowerCase();
 
   let overlap = 0;
   currentTokens.forEach((token) => {
@@ -846,12 +839,18 @@ export function validateGeneratorOutput(
   const sourceText = buildGeneratorSourceText(input);
   const hardFailures: string[] = [];
   const softWarnings: string[] = [];
+  const variants = [output.primaryRewrite, ...output.angleVariations];
   const scoredBlocks: string[] = [
-    output.positioningAngle,
-    output.ctaRecommendation,
-    ...output.openers,
-    ...output.followUps,
-    ...output.objections.map((item) => `${item.objection} ${item.reply}`),
+    output.problem,
+    output.why,
+    output.whatIsHappening,
+    output.primaryRewrite,
+    ...output.angleVariations,
+    output.followUp,
+    ...output.objectionHandling.map((item) => `${item.objection} ${item.reply}`),
+    output.cta,
+    output.whatChanged,
+    output.expectedImpact,
   ];
 
   const fullText = scoredBlocks.join("\n");
@@ -862,93 +861,44 @@ export function validateGeneratorOutput(
     softWarnings.push(...aggregateHumanSignal.reasons);
   }
 
-  if (
-    /(target audience|customer segment|ideal customer profile|persona)/i.test(
-      fullText
-    )
-  ) {
-    hardFailures.push("segment language");
+  if (output.angleVariations.length !== 2) {
+    hardFailures.push("wrong angle variation count");
   }
 
-  for (const phrase of HARD_BANNED_PHRASES) {
-    if (fullText.toLowerCase().includes(phrase)) {
-      hardFailures.push(`banned phrase: ${phrase}`);
-    }
+  if (!preservesCurrentMessageIntent(input.currentMessage, output)) {
+    hardFailures.push("current message intent not preserved");
   }
 
   if (!evidence.weakInput && !hasConcreteAnchor(fullText, sourceText)) {
     hardFailures.push("missing concrete anchor");
   }
 
-  if (
-    input.currentMessage &&
-    input.currentMessage.trim().length > 0 &&
-    !preservesCurrentMessageIntent(input.currentMessage, output)
-  ) {
-    hardFailures.push("current message intent not preserved");
+  if (hasRepetitiveStructure(variants)) {
+    hardFailures.push("repetitive rewrite structure");
   }
 
-  let anchoredOpeners = 0;
-  let signalAnchoredOpeners = 0;
+  variants.forEach((text, index) => {
+    const result = validateOutput(text, sourceText);
 
-  if (hasRepetitiveStructure(output.openers)) {
-    hardFailures.push("repetitive opener structure");
-  }
-
-  output.openers.forEach((opener, index) => {
-    const openerValidation = validateOutput(opener, sourceText);
-
-    if (hasConcreteAnchor(opener, sourceText)) {
-      anchoredOpeners += 1;
-    }
-
-    if (hasSpecificSignalReference(opener, sourceText)) {
-      signalAnchoredOpeners += 1;
-    }
-
-    if (openerValidation.hardFailures.length > 0) {
+    if (result.hardFailures.length > 0) {
       hardFailures.push(
-        ...openerValidation.hardFailures.map(
-          (failure) => `opener_${index + 1}: ${failure}`
-        )
+        ...result.hardFailures.map((failure) => `variant_${index + 1}: ${failure}`)
       );
     }
 
-    if (openerValidation.softWarnings.length > 0) {
+    if (result.softWarnings.length > 0) {
       softWarnings.push(
-        ...openerValidation.softWarnings.map(
-          (warning) => `opener_${index + 1}: ${warning}`
-        )
+        ...result.softWarnings.map((warning) => `variant_${index + 1}: ${warning}`)
       );
     }
   });
-
-  if (!evidence.weakInput && anchoredOpeners < 2) {
-    hardFailures.push("insufficient anchored openers");
-  }
-
-  if (!evidence.weakInput && signalAnchoredOpeners < 2) {
-    hardFailures.push("insufficient signal-anchored openers");
-  }
 
   if (diagnosisLooksMisaligned(fullText, sourceText)) {
     hardFailures.push("misaligned diagnosis");
   }
 
-  const lower = fullText.toLowerCase();
-
-  if (detection.type === "conversion") {
-    if (!/convert|conversion|book|close|checkout|purchase|demo/.test(lower)) {
-      hardFailures.push("conversion alignment missing");
-    }
-  } else if (detection.type === "messaging") {
-    if (!/reply|response|respond|ignored|ghost|silence|opener/.test(lower)) {
-      hardFailures.push("messaging alignment missing");
-    }
-  } else if (detection.type === "attention") {
-    if (!/views|engagement|click|ctr|reach|hook|scroll/.test(lower)) {
-      hardFailures.push("attention alignment missing");
-    }
+  if (detection.type === "conversion" && !/book|booked call|booked calls|reply|click/.test(fullText.toLowerCase())) {
+    hardFailures.push("conversion alignment missing");
   }
 
   return {

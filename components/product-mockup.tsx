@@ -20,7 +20,6 @@ export function ProductMockup() {
     };
 
     updateTime();
-
     const interval = globalThis.setInterval(updateTime, 30000);
 
     return () => {
@@ -51,7 +50,7 @@ export function ProductMockup() {
                   Product input
                 </p>
                 <h3 className="mt-3 font-editorial text-3xl tracking-[-0.02em] text-white">
-                  Generate outreach you can send today.
+                  Fix your outreach. Get more booked calls.
                 </h3>
               </div>
               <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
@@ -62,39 +61,31 @@ export function ProductMockup() {
             <div className="space-y-4">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                 <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  Target audience
+                  Target
                 </div>
                 <p className="text-sm leading-6 text-zinc-200">
-                  B2B SaaS founders with traffic but low conversion
+                  SaaS founders getting replies but weak booked-call conversion
                 </p>
               </div>
 
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                 <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                  Your offer
+                  Offer
                 </div>
                 <p className="text-sm leading-6 text-zinc-200">
-                  I rewrite landing page copy to increase demo conversions by 20-40%
+                  Fix outbound messaging so more replies turn into booked calls
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                    Platform
-                  </div>
-                  <p className="text-sm text-white">LinkedIn</p>
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+                <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                  Where are you losing people?
                 </div>
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                    Tone
-                  </div>
-                  <p className="text-sm text-white">Direct</p>
-                </div>
+                <p className="text-sm text-white">replies → booked calls</p>
               </div>
 
               <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-lg">
-                Generate outreach
+                Fix outreach
               </div>
             </div>
           </div>
@@ -102,28 +93,28 @@ export function ProductMockup() {
           <div className="space-y-4 bg-zinc-950 p-6">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Positioning angle
+                Problem
               </div>
               <p className="text-sm italic leading-7 text-zinc-300">
-                You are paying for traffic, but the page is the leak. Fix the conversion problem before buying more attention.
+                You are getting replies, but people are not moving to book. The drop is happening between reply and booked call.
               </p>
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Opener 1
+                Why
               </div>
               <p className="text-sm leading-7 text-zinc-200">
-                Hey - noticed you are running paid traffic but the CTA is buried. I fix this exact issue for SaaS founders. Worth 10 minutes?
+                The message shows value, but it does not create enough clarity or pressure to make the booking step easy.
               </p>
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-80">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Follow-up
+                Sequence to increase booked calls
               </div>
               <p className="text-sm leading-7 text-zinc-400">
-                No pressure. Just figured the traffic you are paying for deserves a page that converts it.
+                Primary rewrite, angle variations, follow-up, objection handling, CTA.
               </p>
             </div>
           </div>

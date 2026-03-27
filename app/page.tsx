@@ -4,39 +4,21 @@ import { ProductMockup } from "@/components/product-mockup";
 const features = [
   {
     number: "01",
-    title: "Sounds sent.",
+    title: "Diagnose first.",
     body:
-      "Pattern-interrupt openers, tighter follow-ups, and objection replies that sound like a real operator, not a demo prompt.",
+      "ReplyMax shows why the message fails before it rewrites anything, so the output feels like a fix, not another guess.",
   },
   {
     number: "02",
-    title: "Reply-rate first.",
+    title: "Booked-call focused.",
     body:
-      "The goal is not to sound clever. The goal is to reduce friction, create curiosity, and make the next step easy to take.",
+      "The flow is tied to the step where people stop moving, from views to clicks to booked calls.",
   },
   {
     number: "03",
-    title: "Use it now.",
+    title: "Tight scope.",
     body:
-      "Real inputs, real outputs, and a product mockup you can actually point people to when the outreach lands.",
-  },
-];
-
-const heroStats = [
-  {
-    label: "Openers",
-    value: "3",
-    detail: "Pattern interrupts that feel context-aware and sendable.",
-  },
-  {
-    label: "Follow-ups",
-    value: "2",
-    detail: "Built to keep momentum without sounding needy or vague.",
-  },
-  {
-    label: "Objection replies",
-    value: "3",
-    detail: "Commercial answers for price, timing, trust, and skepticism.",
+      "No CRM, no dashboards, no platform sprawl. Just the message, the leak, and the fix sequence.",
   },
 ];
 
@@ -57,7 +39,7 @@ export default function HomePage() {
               Product frame
             </a>
             <a href="#generator" className="text-sm text-zinc-500 transition hover:text-zinc-300">
-              Generate
+              Fix outreach
             </a>
           </div>
 
@@ -80,19 +62,15 @@ export default function HomePage() {
                 </p>
 
                 <h1 className="font-editorial mt-5 max-w-4xl text-5xl leading-[0.9] tracking-[-0.05em] text-white sm:text-6xl lg:text-[84px]">
-                  Cold outreach that gets replies.
-                  <br />
-                  Fewer wasted sends.
+                  Fix your outreach. Get more booked calls.
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
-                  Drop in your audience, offer, and rough message. ReplyMax turns it into
-                  sharper openers, follow-ups, objection replies, and a positioning angle
-                  you can actually send.
+                  Paste your message. ReplyMax shows why it fails and rewrites it into something that actually converts.
                 </p>
 
                 <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-500">
-                  Built for people actually doing outbound, not just testing AI tools.
+                  Fix the step where people see your offer but do not take action.
                 </p>
 
                 <div className="mt-7 flex flex-wrap items-center gap-4">
@@ -100,33 +78,18 @@ export default function HomePage() {
                     href="#generator"
                     className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black shadow-lg transition hover:opacity-90"
                   >
-                    Generate free
+                    Fix outreach
                   </a>
                   <a
                     href="#product-frame"
                     className="rounded-2xl border border-zinc-700 bg-zinc-900/60 px-5 py-3 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:text-white"
                   >
-                    See the product
+                    See the flow
                   </a>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                {heroStats.map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-3xl border border-white/8 bg-white/[0.035] p-5 shadow-[0_20px_50px_-35px_rgba(0,0,0,0.7)]"
-                  >
-                    <div className="font-mono-ui text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                      {item.label}
-                    </div>
-                    <div className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-white">
-                      {item.value}
-                    </div>
-                    <p className="mt-4 text-sm leading-7 text-zinc-400">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
+              <ProductMockup />
             </div>
           </div>
         </div>
@@ -140,55 +103,12 @@ export default function HomePage() {
                 Product frame
               </p>
               <h2 className="font-editorial mt-4 text-4xl leading-[0.96] tracking-[-0.035em] text-white sm:text-5xl">
-                Tight preview. Real enough to sell the next step.
+                Diagnose the leak. Fix the message. Get more booked calls.
               </h2>
               <p className="mt-5 max-w-xl text-base leading-8 text-zinc-400">
-                The outreach gets attention. The mockup gives it somewhere credible to
-                land. Clear value, believable framing, and no bloated fake-product noise.
+                The wedge is simple: paste the message, pick where people drop off, and get a diagnosis-first rewrite sequence built around booked calls.
               </p>
             </div>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-5">
-                <div className="font-editorial text-3xl text-white">3 min</div>
-                <p className="mt-2 text-xs uppercase tracking-[0.14em] text-zinc-500">
-                  to first message
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-5">
-                <div className="font-editorial text-3xl text-white">4</div>
-                <p className="mt-2 text-xs uppercase tracking-[0.14em] text-zinc-500">
-                  platforms supported
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/20 p-5">
-                <div className="font-editorial text-3xl text-white">Free</div>
-                <p className="mt-2 text-xs uppercase tracking-[0.14em] text-zinc-500">
-                  to start, no card
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[34px] border border-white/8 bg-[radial-gradient(circle_at_top_right,_rgba(148,163,184,0.12),_transparent_32%),linear-gradient(180deg,_rgba(255,255,255,0.025),_rgba(255,255,255,0.015))] p-5 shadow-[0_28px_90px_-45px_rgba(0,0,0,0.78)] sm:p-7">
-            <ProductMockup />
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-500">
-              Use this as the visual support behind your outreach. It is screenshot-safe,
-              simple, and grounded enough to make the DM or email feel credible.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section id="how-it-works" className="border-b border-white/8">
-        <div className="mx-auto max-w-[1500px] px-4 py-12 sm:px-6 lg:px-10 lg:py-14">
-          <div className="mb-10 max-w-3xl">
-            <p className="font-mono-ui text-[10px] uppercase tracking-[0.22em] text-zinc-500">
-              How it works
-            </p>
-            <h2 className="font-editorial mt-4 text-4xl tracking-[-0.03em] text-white sm:text-5xl">
-              The landing page sells it. The generator does the work.
-            </h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
@@ -210,6 +130,19 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section id="how-it-works" className="border-b border-white/8">
+        <div className="mx-auto max-w-[1500px] px-4 py-12 sm:px-6 lg:px-10 lg:py-14">
+          <div className="mb-10 max-w-3xl">
+            <p className="font-mono-ui text-[10px] uppercase tracking-[0.22em] text-zinc-500">
+              How it works
+            </p>
+            <h2 className="font-editorial mt-4 text-4xl tracking-[-0.03em] text-white sm:text-5xl">
+              Current message in. Diagnosis and fix sequence out.
+            </h2>
+          </div>
+        </div>
+      </section>
+
       <section id="generator">
         <div className="mx-auto max-w-[1500px] px-4 py-12 sm:px-6 lg:px-10 lg:py-16">
           <div className="mb-10 max-w-3xl">
@@ -217,11 +150,10 @@ export default function HomePage() {
               Try the product
             </p>
             <h2 className="font-editorial mt-4 text-4xl tracking-[-0.03em] text-white sm:text-5xl">
-              Put in your audience and offer. Get something sendable back.
+              Fix your outreach. Get more booked calls.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-400">
-              This is the real generator, not a fake preview. Test the inputs, inspect the
-              outputs, and see whether it gets you closer to replies.
+              Paste your message, choose where people stop moving, and get a diagnosis plus the sequence to increase booked calls.
             </p>
           </div>
 
