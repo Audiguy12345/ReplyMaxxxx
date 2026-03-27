@@ -489,6 +489,19 @@ function usesPurelyDeclarativePattern(text: string) {
   );
 }
 
+function feelsObserved(text: string) {
+  return /\byou\b|\byour\b|\bsaw\b|\bnoticed\b|\blooks like\b/i.test(text);
+}
+
+function sentenceCountBeforeQuestion(text: string) {
+  const questionIndex = text.indexOf("?");
+  const relevantText = questionIndex === -1 ? text : text.slice(0, questionIndex + 1);
+
+  return relevantText
+    .split(/[.!?]+/)
+    .filter((part) => part.trim().length > 0).length;
+}
+
 function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
@@ -665,7 +678,7 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     const hasHigh = textIncludesNumericAnchor(text, evidence.dominantSignal.high.toString());
     const hasLow = textIncludesNumericAnchor(text, evidence.dominantSignal.low.toString());
-    const hasDash = text.includes("-") || text.includes("ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â");
+    const hasDash = /[-\u2014]/.test(text);
     const hasNumbers = /\d/.test(text);
 
     if (!hasHigh || !hasLow) {
@@ -728,7 +741,7 @@ export function scoreSendability(text: string, input: string): SendabilityScore 
     reasons.push("conversational phrasing");
   }
 
-  if (/\d/.test(text) && (text.includes("-") || text.includes("ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â"))) {
+  if (/\\d/.test(text) && (text.includes("-") || text.includes("Ã¢â‚¬â€"))) {
     score += 8;
     reasons.push("clear contrast structure");
   }
@@ -809,6 +822,14 @@ export function validateOutput(text: string, input: string): ValidationResult {
 
   if (!endsWithQuestion(text)) {
     hardFailures.push("rewrite must end with question");
+  }
+
+  if (!feelsObserved(text)) {
+    hardFailures.push("rewrite does not feel observed");
+  }
+
+  if (sentenceCountBeforeQuestion(text) > 2) {
+    hardFailures.push("rewrite is too long before question");
   }
 
   if (!hasSpecificSignalReference(text, input) && !hasConcreteAnchor(text, input)) {

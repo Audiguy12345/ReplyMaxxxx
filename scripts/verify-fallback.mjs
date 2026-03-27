@@ -24,11 +24,11 @@ function createValidProviderResponse() {
     primaryRewrite:
       "You're getting clicks, but replies drop right after the click. What are people seeing right after they click?",
     angleVariations: [
-      "You're getting clicks, but almost no one replies. Where do you think that drop is happening?",
-      "Clicks happen, but replies drop right after the click. What is the first thing they see after they click?",
+      "You're already getting clicks - the leak is what happens after the click. Where do you think that drop is right now?",
+      "You're getting clicks, but the step to the reply still isn't clear. What is the first thing they see after they click?",
     ],
     followUp:
-      "If clicks are already there but replies are not, is the drop happening in the first line or after they understand the offer?",
+      "If you're already getting clicks, is the drop happening in the first line or after they understand the offer?",
   });
 }
 
@@ -195,8 +195,8 @@ try {
 
   const providerRewriteSet = new Set([
     "You're getting clicks, but replies drop right after the click. What are people seeing right after they click?",
-    "You're getting clicks, but almost no one replies. Where do you think that drop is happening?",
-    "Clicks happen, but replies drop right after the click. What is the first thing they see after they click?",
+    "You're already getting clicks - the leak is what happens after the click. Where do you think that drop is right now?",
+    "You're getting clicks, but the step to the reply still isn't clear. What is the first thing they see after they click?",
   ]);
   const returnedRewriteSet = [
     validProviderResult.payload.data.primaryRewrite,
@@ -208,7 +208,7 @@ try {
   );
   assert(
     validProviderResult.payload.data.followUp ===
-      "If clicks are already there but replies are not, is the drop happening in the first line or after they understand the offer?",
+      "If you're already getting clicks, is the drop happening in the first line or after they understand the offer?",
     "Follow-up should come from the accepted provider payload."
   );
 

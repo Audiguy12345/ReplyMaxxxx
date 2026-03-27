@@ -156,6 +156,10 @@ Your job:
 - If numeric contrast exists, use it
 - Make the next action feel obvious
 - End each rewrite and the follow-up with a question
+- Make the first sentence feel observed and user-specific
+- Use contractions when natural
+- Keep it to at most 2 sentences before the question
+- Use angle diversity across the two angle variations: one loss-framing angle and one process-gap angle
 - Do not return purely declarative lines like "that is where it breaks"
 
 Return ONLY valid JSON in this shape:

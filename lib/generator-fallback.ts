@@ -54,9 +54,12 @@ function buildWhatIsHappening(input: GeneratorInput) {
   return "Interest is there, but it dies before the booking step.";
 }
 
+function getEvidence(input: GeneratorInput) {
+  return extractEvidence(buildGeneratorSourceText(input));
+}
+
 function buildAnchor(input: GeneratorInput) {
-  const sourceText = buildGeneratorSourceText(input);
-  const evidence = extractEvidence(sourceText);
+  const evidence = getEvidence(input);
 
   if (evidence.dominantSignal?.type === "numeric_contrast") {
     return `${evidence.dominantSignal.high.toLocaleString()} vs ${evidence.dominantSignal.low.toLocaleString()}`;
@@ -65,49 +68,122 @@ function buildAnchor(input: GeneratorInput) {
   return evidence.concreteDetails[0] || "The message";
 }
 
-function buildPrimaryRewrite(input: GeneratorInput, anchor: string) {
+function formatApproxNumber(value: number) {
+  if (value >= 1000 && value % 1000 === 0) {
+    return `~${value / 1000}k`;
+  }
+
+  return `~${value.toLocaleString()}`;
+}
+
+function buildObservedLead(input: GeneratorInput) {
+  const evidence = getEvidence(input);
+  const numeric = evidence.dominantSignal;
+
+  if (numeric?.type === "numeric_contrast") {
+    return `Saw you're getting ${formatApproxNumber(numeric.high)} views but only ${formatApproxNumber(numeric.low)} signals back`;
+  }
+
   if (input.dropOffStage === "views_to_clicks") {
-    return `${anchor} is getting seen, but almost no one clicks. What are you using right now to turn those views into clicks?`;
+    return "Saw you're getting attention here";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return `${anchor} is getting clicks, but replies drop right after the click. What are people seeing right after they click?`;
+    return "Saw you're already getting clicks";
   }
 
-  return `${anchor} is getting replies, but booked calls still do not happen. What are you using right now to turn that reply into a booked call?`;
+  return "Saw you're already getting replies";
 }
 
-function buildAngleVariations(input: GeneratorInput, anchor: string) {
+function buildLossLead(input: GeneratorInput) {
+  const evidence = getEvidence(input);
+  const numeric = evidence.dominantSignal;
+
+  if (numeric?.type === "numeric_contrast") {
+    return `You've already paid for attention with those ${formatApproxNumber(numeric.high)} views`;
+  }
+
+  if (input.dropOffStage === "views_to_clicks") {
+    return "You've already got attention here";
+  }
+
+  if (input.dropOffStage === "clicks_to_replies") {
+    return "You're already getting clicks";
+  }
+
+  return "You're already getting replies";
+}
+
+function buildProcessLead(input: GeneratorInput) {
+  const evidence = getEvidence(input);
+  const numeric = evidence.dominantSignal;
+
+  if (numeric?.type === "numeric_contrast") {
+    if (input.dropOffStage === "views_to_clicks") {
+      return `${formatApproxNumber(numeric.high)} views to ${formatApproxNumber(numeric.low)} signals says the step between view and click is not clear`;
+    }
+
+    if (input.dropOffStage === "clicks_to_replies") {
+      return `${formatApproxNumber(numeric.high)} views to ${formatApproxNumber(numeric.low)} signals says the step after the click is not clear`;
+    }
+
+    return `${formatApproxNumber(numeric.high)} views to ${formatApproxNumber(numeric.low)} signals says attention is there, but the step from reply to booked call is not clear`;
+  }
+
+  if (input.dropOffStage === "views_to_clicks") {
+    return "You're getting attention, but the step to the click still is not clear";
+  }
+
+  if (input.dropOffStage === "clicks_to_replies") {
+    return "You're getting clicks, but the step to the reply still is not clear";
+  }
+
+  return "You're getting replies, but the step to the booked call still is not clear";
+}
+
+function buildPrimaryRewrite(input: GeneratorInput) {
+  if (input.dropOffStage === "views_to_clicks") {
+    return `${buildObservedLead(input)} - people see it but don't move. What are you using to turn that into clicks right now?`;
+  }
+
+  if (input.dropOffStage === "clicks_to_replies") {
+    return `${buildObservedLead(input)} - replies drop right after the click. What are people seeing right after they click?`;
+  }
+
+  return `${buildObservedLead(input)} - booked calls still do not happen. What are you using right now to turn that reply into a booked call?`;
+}
+
+function buildAngleVariations(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
     return [
-      `${anchor} gets attention, but the click still drops right after the first look. Where do you think that break is happening?`,
-      `${anchor} already proves people see it, but the next action still does not happen. What is the step between the view and the click right now?`,
+      `${buildLossLead(input)} - the leak is what happens after. Where do you think that drop is right now?`,
+      `${buildProcessLead(input)}. What does that step look like right now for you?`,
     ];
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
     return [
-      `${anchor} gets the click, but the reply dies right after. Where do you think that drop is happening?`,
-      `${anchor} is already earning attention, but the conversation still stalls. What is the first thing they see after they click?`,
+      `${buildLossLead(input)} - the leak is what happens after the click. Where do you think that drop is right now?`,
+      `${buildProcessLead(input)}. What does that step look like right now for you?`,
     ];
   }
 
   return [
-    `${anchor} gets replies, but the booking step still leaks. Where do you think people stop before the call?`,
-    `${anchor} already has interest, but the booked call still does not happen. What is the next step after they reply right now?`,
+    `${buildLossLead(input)} - the leak is what happens after the reply. Where do you think that drop is?`,
+    `${buildProcessLead(input)}. What does that step look like right now?`,
   ];
 }
 
 function buildFollowUp(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "If more views are landing but clicks stay flat, the leak is in the first step. Where do you think that drop happens after the view?";
+    return "If you're already getting attention, is the drop happening in the first line or after they understand the offer?";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "If clicks are already there but replies are not, the leak is in the step right after the click. Is the drop happening in the first line or after they understand the offer?";
+    return "If you're already getting clicks, is the drop happening in the first line or after they understand the offer?";
   }
 
-  return "If replies are already there but calls are not, the leak is in the booking step. What happens between the reply and the booking link right now?";
+  return "If you're already getting replies, is the drop happening right after the reply or when the booking step shows up?";
 }
 
 function buildObjectionHandling(input: GeneratorInput): GeneratorOutput["objectionHandling"] {
@@ -132,26 +208,26 @@ function buildObjectionHandling(input: GeneratorInput): GeneratorOutput["objecti
 
 function buildCta(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "What are you currently doing to turn those views into clicks?";
+    return "If you want, I can map exactly where that drop is happening.";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "Where do you think the drop is happening after the click right now?";
+    return "If you want, I can map exactly where replies start to die after the click.";
   }
 
-  return "What is the current step between the reply and the booked call?";
+  return "If you want, I can map exactly where the booking step starts to leak.";
 }
 
 function buildWhatChanged(input: GeneratorInput) {
   if (input.dropOffStage === "views_to_clicks") {
-    return "Before: generic setup, weak pull, no click tension. After: specific observation, clear leak, and a question that opens the conversation.";
+    return "Before: generic setup, weak pull, and no interaction path. After: observed signal, clearer loss framing, and a question that opens the conversation.";
   }
 
   if (input.dropOffStage === "clicks_to_replies") {
-    return "Before: interest without response. After: specific observation, a clearer gap, and a question that invites a reply.";
+    return "Before: interest without response. After: observed signal, clearer loss framing, and a question that invites a reply.";
   }
 
-  return "Before: value without movement. After: clearer leak, sharper reason to act, and a question that opens the booking conversation.";
+  return "Before: value without movement. After: observed signal, sharper loss framing, and a question that opens the booking conversation.";
 }
 
 function buildExpectedImpact(input: GeneratorInput) {
@@ -200,8 +276,8 @@ export function generateFallbackOutput(
         : "observant";
   const anchor = buildAnchor(generatorInput);
   const ranked = rankRewriteSet(
-    buildPrimaryRewrite(generatorInput, anchor),
-    buildAngleVariations(generatorInput, anchor),
+    buildPrimaryRewrite(generatorInput),
+    buildAngleVariations(generatorInput),
     generatorInput
   );
 
