@@ -150,7 +150,7 @@ function buildPrimaryRewrite(input: GeneratorInput) {
     return `${buildObservedLead(input)} - replies drop right after the click. What are people seeing right after they click?`;
   }
 
-  return `${buildObservedLead(input)} - booked calls still do not happen. What are you using right now to turn that reply into a booked call?`;
+  return `${buildObservedLead(input)} - people reply but don't book. What are you using right now to turn that reply into a booked call?`;
 }
 
 function buildAngleVariations(input: GeneratorInput) {

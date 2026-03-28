@@ -6,19 +6,19 @@ const features = [
     number: "01",
     title: "Diagnose first.",
     body:
-      "ReplyMax shows why the message fails before it rewrites anything, so the output feels like a fix, not another guess.",
+      "ReplyMax shows where replies stop turning into booked calls, so the output feels tied to revenue, not copy polish.",
   },
   {
     number: "02",
     title: "Booked-call focused.",
     body:
-      "The flow is tied to the step where people stop moving, from views to clicks to booked calls.",
+      "The flow is tied to the step after someone responds, so you can fix the leak before the booking step dies.",
   },
   {
     number: "03",
     title: "Tight scope.",
     body:
-      "No CRM, no dashboards, no platform sprawl. Just the message, the leak, and the fix sequence.",
+      "No CRM, no dashboards, no platform sprawl. Just the reply, the drop, and the fix that gets more calls booked.",
   },
 ];
 
@@ -39,7 +39,7 @@ export default function HomePage() {
               Product frame
             </a>
             <a href="#generator" className="text-sm text-zinc-500 transition hover:text-zinc-300">
-              Fix outreach
+              Turn replies into booked calls
             </a>
           </div>
 
@@ -62,15 +62,15 @@ export default function HomePage() {
                 </p>
 
                 <h1 className="font-editorial mt-5 max-w-4xl text-5xl leading-[0.9] tracking-[-0.05em] text-white sm:text-6xl lg:text-[84px]">
-                  Fix your outreach. Get more booked calls.
+                  Turn replies into booked calls.
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
-                  Paste your message. ReplyMax shows why it fails and rewrites it into something that actually converts.
+                  Paste your message. ReplyMax shows where replies stop turning into booked calls and how to fix that drop.
                 </p>
 
                 <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-500">
-                  Fix the step where people see your offer but do not take action.
+                  Fix the drop between interest and action.
                 </p>
 
                 <div className="mt-7 flex flex-wrap items-center gap-4">
@@ -78,7 +78,7 @@ export default function HomePage() {
                     href="#generator"
                     className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black shadow-lg transition hover:opacity-90"
                   >
-                    Fix outreach
+                    Fix the drop between interest and action
                   </a>
                   <a
                     href="#product-frame"
@@ -103,10 +103,10 @@ export default function HomePage() {
                 Product frame
               </p>
               <h2 className="font-editorial mt-4 text-4xl leading-[0.96] tracking-[-0.035em] text-white sm:text-5xl">
-                Diagnose the leak. Fix the message. Get more booked calls.
+                Turn replies into booked calls.
               </h2>
               <p className="mt-5 max-w-xl text-base leading-8 text-zinc-400">
-                The wedge is simple: paste the message, pick where people drop off, and get a diagnosis-first rewrite sequence built around booked calls.
+                The wedge is simple: paste the message, pick where replies start to die, and get a diagnosis-first path to more booked calls.
               </p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function HomePage() {
               How it works
             </p>
             <h2 className="font-editorial mt-4 text-4xl tracking-[-0.03em] text-white sm:text-5xl">
-              Current message in. Diagnosis and fix sequence out.
+              Current message in. Reply-to-call leak out.
             </h2>
           </div>
         </div>
@@ -150,10 +150,10 @@ export default function HomePage() {
               Try the product
             </p>
             <h2 className="font-editorial mt-4 text-4xl tracking-[-0.03em] text-white sm:text-5xl">
-              Fix your outreach. Get more booked calls.
+              Fix the drop between interest and action.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-zinc-400">
-              Paste your message, choose where people stop moving, and get a diagnosis plus the sequence to increase booked calls.
+              Paste your message, choose where the drop happens, and get a diagnosis plus the path to more booked calls.
             </p>
           </div>
 

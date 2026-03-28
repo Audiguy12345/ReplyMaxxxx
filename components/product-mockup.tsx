@@ -50,7 +50,7 @@ export function ProductMockup() {
                   Product input
                 </p>
                 <h3 className="mt-3 font-editorial text-3xl tracking-[-0.02em] text-white">
-                  Fix your outreach. Get more booked calls.
+                  Turn replies into booked calls.
                 </h3>
               </div>
               <div className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
@@ -73,7 +73,7 @@ export function ProductMockup() {
                   Offer
                 </div>
                 <p className="text-sm leading-6 text-zinc-200">
-                  Fix outbound messaging so more replies turn into booked calls
+                  Fix the drop between interest and action so more replies turn into booked calls
                 </p>
               </div>
 
@@ -110,7 +110,7 @@ export function ProductMockup() {
               </div>
 
               <div className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black shadow-lg">
-                Fix outreach
+                Turn replies into booked calls
               </div>
             </div>
           </div>
@@ -118,28 +118,37 @@ export function ProductMockup() {
           <div className="space-y-4 bg-zinc-950 p-6">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Problem
+                Message
               </div>
-              <p className="text-sm italic leading-7 text-zinc-300">
-                You are getting replies, but people are not moving to book. The drop is happening between reply and booked call.
+              <p className="text-sm leading-7 text-zinc-200">
+                Saw you&apos;re getting replies, but people still don&apos;t book. What are you using right now to turn that into a booked call?
               </p>
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Why
+                Variations
               </div>
               <p className="text-sm leading-7 text-zinc-200">
-                The message shows value, but it does not create enough clarity or pressure to make the booking step easy.
+                Two sharper ways to say the same thing without sounding templated.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur">
+              <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+                Follow-up
+              </div>
+              <p className="text-sm leading-7 text-zinc-200">
+                A short question that makes replying easy.
               </p>
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-80">
               <div className="mb-2 text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Sequence to increase booked calls
+                Optional CTA
               </div>
               <p className="text-sm leading-7 text-zinc-400">
-                Primary rewrite, angle variations, follow-up, objection handling, CTA.
+                A next step if you want to push the conversation forward.
               </p>
             </div>
           </div>

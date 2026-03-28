@@ -34,8 +34,27 @@ const dropOffStages: Array<{ value: DropOffStage; label: string }> = [
   { value: "clicks_to_replies", label: "clicks -> replies" },
   { value: "replies_to_booked_calls", label: "replies -> booked calls" },
 ];
+
 const QUOTA_EXHAUSTED_MESSAGE =
   "Generation is temporarily unavailable while credits are being replenished. Check back shortly.";
+const ITERATION_MEMORY_KEY = "replymax_iteration_memory";
+
+type FeedbackOutcome = "no_replies" | "replies_no_calls" | "calls_booked";
+
+type IterationMemory = {
+  input: {
+    audience: string;
+    offer: string;
+    currentMessage: string;
+    dropOffStage: DropOffStage;
+    platform: Platform;
+    tone: Tone;
+    extraContext: string;
+  };
+  output: Pick<GeneratorOutput, "primaryRewrite" | "angleVariations" | "followUp" | "cta">;
+  outcome: FeedbackOutcome;
+  updatedAt: string;
+};
 
 function getBrowserStorage() {
   if (typeof window === "undefined") {
@@ -55,6 +74,88 @@ function getBrowserStorage() {
   return storage;
 }
 
+function getOutcomeLabel(outcome: FeedbackOutcome) {
+  switch (outcome) {
+    case "no_replies":
+      return "No replies";
+    case "replies_no_calls":
+      return "Replies, no calls";
+    case "calls_booked":
+      return "Calls booked";
+    default:
+      return outcome;
+  }
+}
+
+function getIterationHint(outcome: FeedbackOutcome) {
+  switch (outcome) {
+    case "no_replies":
+      return "Got it. We tighten the first line and make the reply easier to earn.";
+    case "replies_no_calls":
+      return "Got it. We keep the reply trigger and tighten the booking step.";
+    case "calls_booked":
+      return "Got it. We keep what worked and tighten the next version so it is easier to repeat.";
+    default:
+      return "Got it. Here is the next version.";
+  }
+}
+
+function getNextDropOffStage(outcome: FeedbackOutcome, currentStage: DropOffStage) {
+  switch (outcome) {
+    case "no_replies":
+      return currentStage === "views_to_clicks" ? "views_to_clicks" : "clicks_to_replies";
+    case "replies_no_calls":
+      return "replies_to_booked_calls";
+    case "calls_booked":
+      return currentStage;
+    default:
+      return currentStage;
+  }
+}
+
+function buildIterationContext(extraContext: string, outcome: FeedbackOutcome) {
+  const outcomeContext = {
+    no_replies: "Last result got no replies.",
+    replies_no_calls: "Last result got replies but no calls.",
+    calls_booked: "Last result booked calls.",
+  }[outcome];
+
+  const nextMove = {
+    no_replies: "Tighten the hook and lower the reply friction.",
+    replies_no_calls: "Tighten the booking step and make the next move obvious.",
+    calls_booked: "Keep the same angle and tighten the follow-up for repeatability.",
+  }[outcome];
+
+  return [extraContext.trim(), outcomeContext, nextMove].filter(Boolean).join(" ").slice(0, 500);
+}
+
+function loadIterationMemory() {
+  try {
+    const storage = getBrowserStorage();
+    const raw = storage ? storage.getItem(ITERATION_MEMORY_KEY) : null;
+
+    if (!raw) {
+      return null;
+    }
+
+    return JSON.parse(raw) as IterationMemory;
+  } catch {
+    return null;
+  }
+}
+
+function saveIterationMemory(value: IterationMemory) {
+  try {
+    const storage = getBrowserStorage();
+
+    if (storage) {
+      storage.setItem(ITERATION_MEMORY_KEY, JSON.stringify(value));
+    }
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 export function GeneratorForm() {
   const [audience, setAudience] = useState("");
   const [offer, setOffer] = useState("");
@@ -69,6 +170,9 @@ export function GeneratorForm() {
   const [used, setUsed] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [quotaExhausted, setQuotaExhausted] = useState(false);
+  const [sendReadyMode, setSendReadyMode] = useState(true);
+  const [feedbackOutcome, setFeedbackOutcome] = useState<FeedbackOutcome | null>(null);
+  const [lastIteration, setLastIteration] = useState<IterationMemory | null>(null);
 
   useEffect(() => {
     try {
@@ -76,8 +180,10 @@ export function GeneratorForm() {
       const raw = storage ? storage.getItem(STORAGE_KEY) : null;
       const parsed = raw ? Number(raw) : 0;
       setUsed(Number.isFinite(parsed) ? parsed : 0);
+      setLastIteration(loadIterationMemory());
     } catch {
       setUsed(0);
+      setLastIteration(null);
     } finally {
       setHydrated(true);
     }
@@ -85,6 +191,21 @@ export function GeneratorForm() {
 
   const isLocked = useMemo(() => used >= FREE_GENERATIONS, [used]);
   const isGenerateDisabled = loading || !hydrated || isLocked || quotaExhausted;
+
+  const sendReadySequence = useMemo(() => {
+    if (!result) {
+      return "";
+    }
+
+    return [
+      result.primaryRewrite,
+      ...result.angleVariations,
+      result.followUp,
+      result.cta.trim() ? result.cta : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }, [result]);
 
   function incrementUsage() {
     const next = used + 1;
@@ -100,9 +221,15 @@ export function GeneratorForm() {
     }
   }
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
+  async function submitGeneration(overrides?: {
+    audience?: string;
+    offer?: string;
+    currentMessage?: string;
+    dropOffStage?: DropOffStage;
+    platform?: Platform;
+    tone?: Tone;
+    extraContext?: string;
+  }) {
     if (quotaExhausted) {
       setError(QUOTA_EXHAUSTED_MESSAGE);
       return;
@@ -112,6 +239,16 @@ export function GeneratorForm() {
       setError("Free limit reached. Upgrade to continue.");
       return;
     }
+
+    const payload = {
+      audience: overrides?.audience ?? audience,
+      offer: overrides?.offer ?? offer,
+      currentMessage: overrides?.currentMessage ?? currentMessage,
+      dropOffStage: overrides?.dropOffStage ?? dropOffStage,
+      platform: overrides?.platform ?? platform,
+      tone: overrides?.tone ?? tone,
+      extraContext: overrides?.extraContext ?? extraContext,
+    };
 
     setLoading(true);
     setError("");
@@ -123,15 +260,7 @@ export function GeneratorForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          audience,
-          offer,
-          currentMessage,
-          dropOffStage,
-          platform,
-          tone,
-          extraContext,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = (await res.json()) as GenerateApiResponse | GenerateApiError;
@@ -145,21 +274,95 @@ export function GeneratorForm() {
       }
 
       setResult(json.data);
+      setFeedbackOutcome(null);
       incrementUsage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate.");
+      setError(err instanceof Error ? err.message : "Failed to map the drop.");
     } finally {
       setLoading(false);
     }
   }
 
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await submitGeneration();
+  }
+
+  function handleOutcomeSelect(outcome: FeedbackOutcome) {
+    if (!result) {
+      return;
+    }
+
+    setFeedbackOutcome(outcome);
+
+    const snapshot: IterationMemory = {
+      input: {
+        audience,
+        offer,
+        currentMessage,
+        dropOffStage,
+        platform,
+        tone,
+        extraContext,
+      },
+      output: {
+        primaryRewrite: result.primaryRewrite,
+        angleVariations: result.angleVariations,
+        followUp: result.followUp,
+        cta: result.cta,
+      },
+      outcome,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLastIteration(snapshot);
+    saveIterationMemory(snapshot);
+  }
+
+  async function handleIterate() {
+    if (!result || !feedbackOutcome) {
+      return;
+    }
+
+    const nextDropOffStage = getNextDropOffStage(feedbackOutcome, dropOffStage);
+    const nextCurrentMessage = result.primaryRewrite;
+    const nextExtraContext = buildIterationContext(extraContext, feedbackOutcome);
+
+    setCurrentMessage(nextCurrentMessage);
+    setDropOffStage(nextDropOffStage);
+    setExtraContext(nextExtraContext);
+
+    await submitGeneration({
+      currentMessage: nextCurrentMessage,
+      dropOffStage: nextDropOffStage,
+      extraContext: nextExtraContext,
+    });
+  }
+
+  function loadLastFeedback() {
+    if (!lastIteration) {
+      return;
+    }
+
+    setAudience(lastIteration.input.audience);
+    setOffer(lastIteration.input.offer);
+    setCurrentMessage(lastIteration.output.primaryRewrite);
+    setDropOffStage(getNextDropOffStage(lastIteration.outcome, lastIteration.input.dropOffStage));
+    setPlatform(lastIteration.input.platform);
+    setTone(lastIteration.input.tone);
+    setExtraContext(buildIterationContext(lastIteration.input.extraContext, lastIteration.outcome));
+    setFeedbackOutcome(lastIteration.outcome);
+    setResult(null);
+    setError("");
+  }
+
   const buttonLabel = loading
-    ? "Fixing outreach..."
+    ? "Fixing the drop..."
     : quotaExhausted
-    ? "Generation unavailable"
-    : isLocked
-    ? "Upgrade to continue"
-    : "Fix outreach";
+      ? "Generation unavailable"
+      : isLocked
+        ? "Upgrade to continue"
+        : "Turn replies into booked calls";
 
   return (
     <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -170,7 +373,7 @@ export function GeneratorForm() {
               Product input
             </p>
             <h2 className="font-editorial mt-3 text-3xl tracking-[-0.02em] text-white">
-              Fix broken outreach.
+              Fix the drop between interest and action.
             </h2>
           </div>
           <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
@@ -179,21 +382,46 @@ export function GeneratorForm() {
         </div>
 
         <form onSubmit={onSubmit} className="space-y-6">
-          <button
-            type="button"
-            onClick={() => {
-              setAudience("early-stage B2B SaaS founders");
-              setOffer("help turning traffic into more booked demos");
-              setCurrentMessage("Hey - noticed you're getting traffic. We help SaaS companies improve conversions. Want to chat?");
-              setDropOffStage("replies_to_booked_calls");
-              setPlatform("linkedin");
-              setTone("direct");
-              setExtraContext("10,000 views but only 100 signals back");
-            }}
-            className="font-mono-ui inline-flex rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-[11px] uppercase tracking-[0.1em] text-zinc-400 transition hover:border-zinc-500 hover:text-white"
-          >
-            Use example
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setAudience("early-stage B2B SaaS founders");
+                setOffer("help turning traffic into more booked demos");
+                setCurrentMessage("Hey - noticed you're getting traffic. We help SaaS companies improve conversions. Want to chat?");
+                setDropOffStage("replies_to_booked_calls");
+                setPlatform("linkedin");
+                setTone("direct");
+                setExtraContext("10,000 views but only 100 signals back");
+                setResult(null);
+                setFeedbackOutcome(null);
+              }}
+              className="font-mono-ui inline-flex rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-[11px] uppercase tracking-[0.1em] text-zinc-400 transition hover:border-zinc-500 hover:text-white"
+            >
+              Use example
+            </button>
+
+            {lastIteration ? (
+              <button
+                type="button"
+                onClick={loadLastFeedback}
+                className="font-mono-ui inline-flex rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-[11px] uppercase tracking-[0.1em] text-zinc-400 transition hover:border-zinc-500 hover:text-white"
+              >
+                Use last feedback
+              </button>
+            ) : null}
+          </div>
+
+          {lastIteration ? (
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-950 p-4 text-sm leading-6 text-zinc-300">
+              <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                Last outcome
+              </div>
+              <p className="mt-2">
+                {getOutcomeLabel(lastIteration.outcome)}. {getIterationHint(lastIteration.outcome)}
+              </p>
+            </div>
+          ) : null}
 
           <div>
             <label className="font-mono-ui mb-2 block text-[10px] uppercase tracking-[0.14em] text-zinc-500">
@@ -328,151 +556,165 @@ export function GeneratorForm() {
           <div className="space-y-6">
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
               <p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-zinc-500">
-                Problem
+                Message
               </p>
-              <p className="mt-3 text-sm italic leading-7 text-zinc-300">
-                You are getting attention, but people are not moving to book. The drop is happening between interest and action.
+              <p className="mt-3 text-sm leading-7 text-zinc-300">
+                Saw you&apos;re getting replies, but people still don&apos;t book. What are you using right now to turn that into a booked call?
               </p>
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-80">
               <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                Why
+                Variations
               </div>
               <p className="mt-3 text-sm leading-7 text-zinc-400">
-                The message shows value, but does not create enough clarity or pressure to take the next step.
+                Two sharper ways to say the same thing without sounding templated.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-80">
+              <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                Follow-up
+              </div>
+              <p className="mt-3 text-sm leading-7 text-zinc-400">
+                A short question that keeps the conversation moving.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur opacity-70">
+              <div className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                Optional CTA
+              </div>
+              <p className="mt-3 text-sm leading-7 text-zinc-500">
+                A next step if you want to push the conversation forward.
               </p>
             </div>
           </div>
         ) : (
-          <>
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    Problem
-                  </p>
-                  <p className="mt-3 text-sm italic leading-7 text-zinc-300">
-                    {result.problem}
-                  </p>
-                </div>
-                <CopyButton value={result.problem} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    Why
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-zinc-200">
-                    {result.why}
-                  </p>
-                </div>
-                <CopyButton value={result.why} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    What&apos;s happening
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-zinc-200">
-                    {result.whatIsHappening}
-                  </p>
-                </div>
-                <CopyButton value={result.whatIsHappening} />
-              </div>
-            </div>
-
-            <div className="space-y-6">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <h3 className="font-editorial text-2xl tracking-[-0.02em] text-white">
-                Sequence to increase booked calls
+                Turn replies into booked calls
               </h3>
 
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                      Primary rewrite
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-zinc-200">
-                      {result.primaryRewrite}
-                    </p>
-                  </div>
-                  <CopyButton value={result.primaryRewrite} />
-                </div>
-              </div>
-
-              <ResultCard title="Angle variation" items={result.angleVariations} />
-
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                      Follow-up
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-zinc-200">
-                      {result.followUp}
-                    </p>
-                  </div>
-                  <CopyButton value={result.followUp} />
-                </div>
-              </div>
-
-              <ResultCard
-                title="Objection handling"
-                items={result.objectionHandling.map(
-                  (item) => `${item.objection}\n\n${item.reply}`
-                )}
-              />
-
-              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                      CTA
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-zinc-200">
-                      {result.cta}
-                    </p>
-                  </div>
-                  <CopyButton value={result.cta} />
-                </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/70 px-3 py-2 text-xs text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={sendReadyMode}
+                    onChange={(e) => setSendReadyMode(e.target.checked)}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-950 text-white"
+                  />
+                  Send-ready mode
+                </label>
+                <CopyButton value={sendReadySequence} />
               </div>
             </div>
+
+            {sendReadyMode ? (
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                  Send-ready set
+                </p>
+                <div className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-200">
+                  {sendReadySequence}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                        Message
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-zinc-200">
+                        {result.primaryRewrite}
+                      </p>
+                    </div>
+                    <CopyButton value={result.primaryRewrite} />
+                  </div>
+                </div>
+
+                <ResultCard title="Variation" items={result.angleVariations} />
+
+                <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                        Follow-up
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-zinc-200">
+                        {result.followUp}
+                      </p>
+                    </div>
+                    <CopyButton value={result.followUp} />
+                  </div>
+                </div>
+
+                {result.cta.trim().length > 0 ? (
+                  <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                          Optional CTA
+                        </p>
+                        <p className="mt-3 text-sm leading-7 text-zinc-200">
+                          {result.cta}
+                        </p>
+                      </div>
+                      <CopyButton value={result.cta} />
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    What changed
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-zinc-200 whitespace-pre-wrap">
-                    {result.whatChanged}
-                  </p>
-                </div>
-                <CopyButton value={result.whatChanged} />
+              <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                What happened when you sent this?
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {([
+                  ["no_replies", "No replies"],
+                  ["replies_no_calls", "Replies, no calls"],
+                  ["calls_booked", "Calls booked"],
+                ] as Array<[FeedbackOutcome, string]>).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => handleOutcomeSelect(value)}
+                    className={`rounded-2xl border px-4 py-3 text-sm transition ${
+                      feedbackOutcome === value
+                        ? "border-white bg-white text-black"
+                        : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-600"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
-                    Expected impact
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-zinc-200">
-                    {result.expectedImpact}
-                  </p>
-                </div>
-                <CopyButton value={result.expectedImpact} />
+            {feedbackOutcome ? (
+              <div className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-6 shadow-xl backdrop-blur transition hover:border-zinc-700">
+                <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                  Next version
+                </p>
+                <p className="mt-3 text-sm leading-7 text-zinc-200">
+                  {getIterationHint(feedbackOutcome)}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleIterate}
+                  disabled={loading || quotaExhausted}
+                  className="mt-4 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-black shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Based on that, give me the next version
+                </button>
               </div>
-            </div>
-          </>
+            ) : null}
+          </div>
         )}
       </div>
     </div>

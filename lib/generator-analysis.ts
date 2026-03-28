@@ -502,6 +502,11 @@ function sentenceCountBeforeQuestion(text: string) {
     .filter((part) => part.trim().length > 0).length;
 }
 
+function soundsHuman(text: string) {
+  return !/do not happen|leverage|optimize|improve conversions/i.test(text);
+}
+
+
 function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
@@ -560,9 +565,14 @@ export function scoreHumanSignal(text: string, input: string): HumanSignalScore 
     }
   }
 
-  if (text.includes("does not") || text.includes("create better")) {
+  if (text.includes("does not") || text.includes("create better") || lower.includes("booked calls still do not happen") || lower.includes("still do not happen")) {
     scorePenalty += 6;
     reasons.push("overly formal phrasing");
+  }
+
+  if (!soundsHuman(text)) {
+    scorePenalty += 18;
+    reasons.push("sounds like saas copy");
   }
 
   for (const phrase of ADVISOR_PHRASES) {
@@ -766,6 +776,11 @@ export function scoreSendability(text: string, input: string): SendabilityScore 
     reasons.push("advisor phrasing hurts sendability");
   }
 
+  if (!soundsHuman(text)) {
+    score -= 18;
+    reasons.push("sounds like saas copy");
+  }
+
   if (text.length > 120) {
     score -= 6;
     reasons.push("too long to send");
@@ -838,6 +853,10 @@ export function validateOutput(text: string, input: string): ValidationResult {
 
   if (usesPurelyDeclarativePattern(text)) {
     hardFailures.push("rewrite stays purely declarative");
+  }
+
+  if (!soundsHuman(text)) {
+    hardFailures.push("rewrite sounds like saas copy");
   }
 
   const humanSignal = scoreHumanSignal(text, input);

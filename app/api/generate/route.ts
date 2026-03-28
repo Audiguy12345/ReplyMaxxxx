@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
     console.error("Generate route error:", error);
 
     const body: GenerateApiError = {
-      error: "Failed to generate outreach copy.",
+      error: "Failed to map the drop after someone responds.",
       code: "generation_failed",
     };
 
